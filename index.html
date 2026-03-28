@@ -4,1112 +4,961 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PFMS - 物業與設施及資產管理系統</title>
-    <meta name="description" content="PFMS Property & Facility Management System - 3D GIS整合的綜合性物業設施資產管理平台">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a56db'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='16' font-weight='bold' font-family='system-ui'>P</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a56db'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='16' font-weight='bold'>P</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Cesium -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body, #root { height: 100%; width: 100%; overflow: hidden; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif; -webkit-font-smoothing: antialiased; }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.5); }
-
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 15px rgba(59,130,246,0.6); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
-        
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        .slide-in-left { animation: slideInLeft 0.3s ease-out; }
-        .slide-in-right { animation: slideInRight 0.3s ease-out; }
-        .spin { animation: spin 1s linear infinite; }
-        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-        
-        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
-        .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-
-        /* Three.js canvas */
-        .three-canvas canvas { display: block; width: 100% !important; height: 100% !important; }
-
-        /* Mobile touch improvements */
-        button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-        input { font-size: 16px; } /* Prevent iOS zoom */
-        
-        /* Backdrop blur fallback */
-        @supports not (backdrop-filter: blur(10px)) {
-            .backdrop-blur { background-color: rgba(15,23,42,0.95) !important; }
-        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body,#root{height:100%;width:100%;overflow:hidden}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;-webkit-font-smoothing:antialiased}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.3);border-radius:10px}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+        @keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+        .fade-in{animation:fadeIn .4s ease-out}
+        .slide-in-left{animation:slideInLeft .3s ease-out}
+        .slide-in-right{animation:slideInRight .3s ease-out}
+        .slide-up{animation:slideUp .3s ease-out}
+        .spin{animation:spin 1s linear infinite}
+        .hover-lift{transition:transform .2s,box-shadow .2s}
+        .hover-lift:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.08)}
+        .three-canvas canvas{display:block;width:100%!important;height:100%!important;cursor:grab}
+        .three-canvas canvas:active{cursor:grabbing}
+        button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        input{font-size:16px}
+        .cesium-widget,.cesium-viewer{width:100%!important;height:100%!important}
+        .cesium-viewer .cesium-viewer-toolbar,.cesium-viewer .cesium-viewer-animationContainer,.cesium-viewer .cesium-viewer-timelineContainer,.cesium-viewer .cesium-viewer-bottom,.cesium-viewer .cesium-viewer-fullscreenContainer{display:none!important}
+        .mapboxgl-map{width:100%!important;height:100%!important}
+        .mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{display:none!important}
+        /* 3D Label overlay */
+        .label-3d{position:absolute;pointer-events:auto;cursor:pointer;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;transition:transform .15s,opacity .15s;z-index:5;backdrop-filter:blur(6px)}
+        .label-3d:hover{transform:scale(1.15);z-index:10}
     </style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useMemo,useCallback}=React;
 
-    <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+// ============ SVG Icon System ============
+const Ic=({d,size=18,className=""})=>(
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {Array.isArray(d)?d.map((p,i)=>{
+      if(typeof p==='object'&&p.t==='c')return <circle key={i} cx={p.cx} cy={p.cy} r={p.r}/>;
+      if(typeof p==='object'&&p.t==='r')return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx={p.rx||0}/>;
+      if(typeof p==='object'&&p.t==='l')return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2}/>;
+      return <path key={i} d={p}/>;
+    }):<path d={d}/>}
+  </svg>
+);
+const I={
+  Home:(p)=><Ic {...p} d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z","M9 22V12h6v10"]}/>,
+  Globe:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},"M2 12h20","M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"]}/>,
+  Database:(p)=><Ic {...p} d={["M12 2C6.48 2 2 3.79 2 6v12c0 2.21 4.48 4 10 4s10-1.79 10-4V6c0-2.21-4.48-4-10-4z","M2 6c0 2.21 4.48 4 10 4s10-1.79 10-4","M2 12c0 2.21 4.48 4 10 4s10-1.79 10-4"]}/>,
+  Clipboard:(p)=><Ic {...p} d={[{t:'r',x:8,y:2,w:8,h:4,rx:1},"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2","M9 14l2 2 4-4"]}/>,
+  Wrench:(p)=><Ic {...p} d={["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"]}/>,
+  BarChart:(p)=><Ic {...p} d={[{t:'l',x1:12,y1:20,x2:12,y2:10},{t:'l',x1:18,y1:20,x2:18,y2:4},{t:'l',x1:6,y1:20,x2:6,y2:16}]}/>,
+  Menu:(p)=><Ic {...p} d={[{t:'l',x1:3,y1:6,x2:21,y2:6},{t:'l',x1:3,y1:12,x2:21,y2:12},{t:'l',x1:3,y1:18,x2:21,y2:18}]}/>,
+  X:(p)=><Ic {...p} d={[{t:'l',x1:18,y1:6,x2:6,y2:18},{t:'l',x1:6,y1:6,x2:18,y2:18}]}/>,
+  Bell:(p)=><Ic {...p} d={["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"]}/>,
+  Search:(p)=><Ic {...p} d={[{t:'c',cx:11,cy:11,r:8},{t:'l',x1:21,y1:21,x2:16.65,y2:16.65}]}/>,
+  ChevDown:(p)=><Ic {...p} d="M6 9l6 6 6-6"/>,
+  ChevRight:(p)=><Ic {...p} d="M9 18l6-6-6-6"/>,
+  ChevLeft:(p)=><Ic {...p} d="M15 18l-6-6 6-6"/>,
+  Back:(p)=><Ic {...p} d={["M19 12H5","M12 19l-7-7 7-7"]}/>,
+  Building:(p)=><Ic {...p} d={["M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18","M2 22h20"]}/>,
+  Layers:(p)=><Ic {...p} d={["M12 2L2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"]}/>,
+  MapPin:(p)=><Ic {...p} d={["M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z",{t:'c',cx:12,cy:10,r:3}]}/>,
+  Server:(p)=><Ic {...p} d={[{t:'r',x:2,y:2,w:20,h:8,rx:2},{t:'r',x:2,y:14,w:20,h:8,rx:2}]}/>,
+  Cpu:(p)=><Ic {...p} d={[{t:'r',x:4,y:4,w:16,h:16,rx:2},"M9 9h6v6H9z"]}/>,
+  Alert:(p)=><Ic {...p} d={["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z",{t:'l',x1:12,y1:9,x2:12,y2:13},{t:'l',x1:12,y1:17,x2:12.01,y2:17}]}/>,
+  Check:(p)=><Ic {...p} d={["M22 11.08V12a10 10 0 1 1-5.93-9.14","M22 4L12 14.01l-3-3"]}/>,
+  Clock:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},"M12 6v6l4 2"]}/>,
+  ArrowUp:(p)=><Ic {...p} d={[{t:'l',x1:7,y1:17,x2:17,y2:7},"M7 7h10v10"]}/>,
+  ArrowDown:(p)=><Ic {...p} d={[{t:'l',x1:7,y1:7,x2:17,y2:17},"M17 7v10H7"]}/>,
+  Plus:(p)=><Ic {...p} d={[{t:'l',x1:12,y1:5,x2:12,y2:19},{t:'l',x1:5,y1:12,x2:19,y2:12}]}/>,
+  QrCode:(p)=><Ic {...p} d={[{t:'r',x:2,y:2,w:8,h:8,rx:1},{t:'r',x:14,y:2,w:8,h:8,rx:1},{t:'r',x:2,y:14,w:8,h:8,rx:1}]}/>,
+  ZoomIn:(p)=><Ic {...p} d={[{t:'c',cx:11,cy:11,r:8},{t:'l',x1:21,y1:21,x2:16.65,y2:16.65},{t:'l',x1:11,y1:8,x2:11,y2:14},{t:'l',x1:8,y1:11,x2:14,y2:11}]}/>,
+  ZoomOut:(p)=><Ic {...p} d={[{t:'c',cx:11,cy:11,r:8},{t:'l',x1:21,y1:21,x2:16.65,y2:16.65},{t:'l',x1:8,y1:11,x2:14,y2:11}]}/>,
+  RotateCcw:(p)=><Ic {...p} d={["M1 4v6h6","M3.51 15a9 9 0 1 0 2.13-9.36L1 10"]}/>,
+  Locate:(p)=><Ic {...p} d={[{t:'l',x1:12,y1:2,x2:12,y2:6},{t:'l',x1:12,y1:18,x2:12,y2:22},{t:'l',x1:2,y1:12,x2:6,y2:12},{t:'l',x1:18,y1:12,x2:22,y2:12},{t:'c',cx:12,cy:12,r:4}]}/>,
+  Activity:(p)=><Ic {...p} d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
+  Gauge:(p)=><Ic {...p} d={["M12 15l3.5-7","M2 12a10 10 0 1 1 20 0"]}/>,
+  Thermo:(p)=><Ic {...p} d={["M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"]}/>,
+  Zap:(p)=><Ic {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>,
+  Download:(p)=><Ic {...p} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"]}/>,
+  Refresh:(p)=><Ic {...p} d={["M23 4v6h-6","M1 20v-6h6","M3.51 9a9 9 0 0 1 14.85-3.36L23 10","M1 14l4.64 4.36A9 9 0 0 0 20.49 15"]}/>,
+  Play:(p)=><Ic {...p} d="M5 3l14 9-14 9V3z"/>,
+  Grid:(p)=><Ic {...p} d={[{t:'r',x:3,y:3,w:7,h:7},{t:'r',x:14,y:3,w:7,h:7},{t:'r',x:14,y:14,w:7,h:7},{t:'r',x:3,y:14,w:7,h:7}]}/>,
+  List:(p)=><Ic {...p} d={[{t:'l',x1:8,y1:6,x2:21,y2:6},{t:'l',x1:8,y1:12,x2:21,y2:12},{t:'l',x1:8,y1:18,x2:21,y2:18}]}/>,
+  TrendUp:(p)=><Ic {...p} d={["M23 6l-9.5 9.5-5-5L1 18","M17 6h6v6"]}/>,
+  Target:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},{t:'c',cx:12,cy:12,r:6},{t:'c',cx:12,cy:12,r:2}]}/>,
+  Star:(p)=><Ic {...p} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>,
+  Scan:(p)=><Ic {...p} d={["M3 7V5a2 2 0 0 1 2-2h2","M17 3h2a2 2 0 0 1 2 2v2","M21 17v2a2 2 0 0 1-2 2h-2","M7 21H5a2 2 0 0 1-2-2v-2"]}/>,
+  Filter:(p)=><Ic {...p} d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>,
+  Settings:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:3},"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"]}/>,
+  User:(p)=><Ic {...p} d={["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2",{t:'c',cx:12,cy:7,r:4}]}/>,
+  Calendar:(p)=><Ic {...p} d={[{t:'r',x:3,y:4,w:18,h:18,rx:2},"M16 2v4","M8 2v4","M3 10h18"]}/>,
+  Key:(p)=><Ic {...p} d={["M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"]}/>,
+  Info:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},{t:'l',x1:12,y1:16,x2:12,y2:12},{t:'l',x1:12,y1:8,x2:12.01,y2:8}]}/>,
+  ExternalLink:(p)=><Ic {...p} d={["M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6","M15 3h6v6","M10 14L21 3"]}/>,
+};
 
-    // ============================================================
-    // SVG Icon Components (replacing lucide-react)
-    // ============================================================
-    const Icon = ({ d, size = 18, className = "", strokeWidth = 2 }) => (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-            {Array.isArray(d) ? d.map((p, i) => {
-                if (typeof p === 'object' && p.type === 'circle') return <circle key={i} cx={p.cx} cy={p.cy} r={p.r} />;
-                if (typeof p === 'object' && p.type === 'rect') return <rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} rx={p.rx||0} />;
-                if (typeof p === 'object' && p.type === 'line') return <line key={i} x1={p.x1} y1={p.y1} x2={p.x2} y2={p.y2} />;
-                return <path key={i} d={p} />;
-            }) : <path d={d} />}
-        </svg>
-    );
+// ============ Data ============
+const SITES=[
+  {id:"s1",name:"台北資料中心",type:"datacenter",address:"台北市大安區忠孝東路四段200號",lat:25.0419,lng:121.5654,status:"active",assets:342,alerts:3,
+    floors:[
+      {id:"f1",name:"B2F 電力設施",level:-2,zones:[
+        {id:"z1",name:"UPS區",assets:[
+          {id:"a1",name:"UPS-001",type:"UPS",status:"active",temp:28.5,power:85,model:"APC Smart-UPS 3000"},
+          {id:"a2",name:"UPS-002",type:"UPS",status:"active",temp:27.3,power:72,model:"APC Smart-UPS 3000"},
+        ]},{id:"z2",name:"配電區",assets:[
+          {id:"a3",name:"PDU-A01",type:"PDU",status:"active",temp:31.2,power:65,model:"Eaton ePDU G3"},
+        ]},
+      ]},
+      {id:"f2",name:"B1F 主機房",level:-1,zones:[
+        {id:"z3",name:"機櫃區A",assets:[
+          {id:"a4",name:"Rack-C08",type:"Server Rack",status:"active",temp:24.1,power:92,model:"Dell R370 42U",subItems:[
+            {id:"a4-1",name:"25U-26U: Dell R750",type:"Server",status:"active"},
+            {id:"a4-2",name:"23U-24U: Dell R750",type:"Server",status:"maintenance"},
+            {id:"a4-3",name:"20U-22U: NetApp AFF",type:"Storage",status:"active"},
+          ]},
+          {id:"a5",name:"Rack-C09",type:"Server Rack",status:"active",temp:23.8,power:88,model:"Dell R370 42U"},
+          {id:"a6",name:"Rack-C10",type:"Server Rack",status:"warning",temp:29.5,power:95,model:"Dell R370 42U"},
+        ]},{id:"z4",name:"機櫃區B",assets:[
+          {id:"a7",name:"Rack-C15",type:"Server Rack",status:"active",temp:22.9,power:78,model:"HPE G2 42U"},
+          {id:"a8",name:"Rack-C16",type:"Server Rack",status:"active",temp:23.1,power:81,model:"HPE G2 42U"},
+        ]},{id:"z5",name:"網路區",assets:[
+          {id:"a9",name:"Core-SW01",type:"Switch",status:"active",temp:35.2,power:45,model:"Cisco Nexus 9300"},
+          {id:"a10",name:"Core-SW02",type:"Switch",status:"active",temp:34.8,power:43,model:"Cisco Nexus 9300"},
+        ]},
+      ]},
+      {id:"f3",name:"1F 管理中心",level:1,zones:[
+        {id:"z6",name:"監控室",assets:[
+          {id:"a11",name:"監控主機",type:"Workstation",status:"active",temp:26.0,power:35,model:"Dell Precision 7920"},
+        ]},
+      ]},
+    ]
+  },
+  {id:"s2",name:"新竹科技廠",type:"factory",address:"新竹市東區光復路二段101號",lat:24.8067,lng:120.9717,status:"active",assets:528,alerts:1,
+    floors:[{id:"f4",name:"1F 生產線",level:1,zones:[
+      {id:"z7",name:"CNC加工區",assets:[
+        {id:"a12",name:"CNC-001",type:"CNC Machine",status:"active",temp:42.1,power:78,model:"FANUC α-D21MiB5"},
+        {id:"a13",name:"CNC-002",type:"CNC Machine",status:"maintenance",temp:0,power:0,model:"FANUC α-D21MiB5"},
+      ]},
+    ]}]
+  },
+  {id:"s3",name:"高雄物流中心",type:"warehouse",address:"高雄市前鎮區成功二路88號",lat:22.6273,lng:120.3014,status:"active",assets:186,alerts:0,
+    floors:[{id:"f5",name:"1F 倉儲區",level:1,zones:[
+      {id:"z8",name:"A區",assets:[
+        {id:"a14",name:"堆高機-01",type:"Forklift",status:"active",temp:0,power:60,model:"Toyota 8FBN25"},
+      ]},
+    ]}]
+  },
+];
 
-    // Icon paths
-    const Icons = {
-        Home: (p) => <Icon {...p} d={["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10"]} />,
-        Globe: (p) => <Icon {...p} d={[{type:'circle',cx:12,cy:12,r:10},"M2 12h20","M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"]} />,
-        Database: (p) => <Icon {...p} d={["M12 2C6.48 2 2 3.79 2 6v12c0 2.21 4.48 4 10 4s10-1.79 10-4V6c0-2.21-4.48-4-10-4z","M2 6c0 2.21 4.48 4 10 4s10-1.79 10-4","M2 12c0 2.21 4.48 4 10 4s10-1.79 10-4"]} />,
-        ClipboardCheck: (p) => <Icon {...p} d={[{type:'rect',x:8,y:2,w:8,h:4,rx:1},"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2","M9 14l2 2 4-4"]} />,
-        Wrench: (p) => <Icon {...p} d={["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"]} />,
-        BarChart3: (p) => <Icon {...p} d={[{type:'line',x1:12,y1:20,x2:12,y2:10},{type:'line',x1:18,y1:20,x2:18,y2:4},{type:'line',x1:6,y1:20,x2:6,y2:16}]} />,
-        Menu: (p) => <Icon {...p} d={[{type:'line',x1:3,y1:6,x2:21,y2:6},{type:'line',x1:3,y1:12,x2:21,y2:12},{type:'line',x1:3,y1:18,x2:21,y2:18}]} />,
-        X: (p) => <Icon {...p} d={[{type:'line',x1:18,y1:6,x2:6,y2:18},{type:'line',x1:6,y1:6,x2:18,y2:18}]} />,
-        Bell: (p) => <Icon {...p} d={["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"]} />,
-        Search: (p) => <Icon {...p} d={[{type:'circle',cx:11,cy:11,r:8},{type:'line',x1:21,y1:21,x2:16.65,y2:16.65}]} />,
-        ChevronDown: (p) => <Icon {...p} d="M6 9l6 6 6-6" />,
-        ChevronRight: (p) => <Icon {...p} d="M9 18l6-6-6-6" />,
-        ChevronLeft: (p) => <Icon {...p} d="M15 18l-6-6 6-6" />,
-        Building2: (p) => <Icon {...p} d={["M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18","M2 22h20","M6 12h.01","M10 12h.01","M14 12h.01","M6 16h.01","M10 16h.01","M14 16h.01","M6 8h.01","M10 8h.01","M14 8h.01"]} />,
-        Layers: (p) => <Icon {...p} d={["M12 2L2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"]} />,
-        MapPin: (p) => <Icon {...p} d={["M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z",{type:'circle',cx:12,cy:10,r:3}]} />,
-        Server: (p) => <Icon {...p} d={[{type:'rect',x:2,y:2,w:20,h:8,rx:2},{type:'rect',x:2,y:14,w:20,h:8,rx:2},{type:'line',x1:6,y1:6,x2:6.01,y2:6},{type:'line',x1:6,y1:18,x2:6.01,y2:18}]} />,
-        Cpu: (p) => <Icon {...p} d={[{type:'rect',x:4,y:4,w:16,h:16,rx:2},"M9 9h6v6H9z","M9 1v3","M15 1v3","M9 20v3","M15 20v3","M20 9h3","M20 14h3","M1 9h3","M1 14h3"]} />,
-        Box: (p) => <Icon {...p} d={["M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z","M3.27 6.96L12 12.01l8.73-5.05","M12 22.08V12"]} />,
-        AlertTriangle: (p) => <Icon {...p} d={["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z",{type:'line',x1:12,y1:9,x2:12,y2:13},{type:'line',x1:12,y1:17,x2:12.01,y2:17}]} />,
-        CheckCircle: (p) => <Icon {...p} d={["M22 11.08V12a10 10 0 1 1-5.93-9.14","M22 4L12 14.01l-3-3"]} />,
-        Clock: (p) => <Icon {...p} d={[{type:'circle',cx:12,cy:12,r:10},"M12 6v6l4 2"]} />,
-        ArrowUpRight: (p) => <Icon {...p} d={[{type:'line',x1:7,y1:17,x2:17,y2:7},"M7 7h10v10"]} />,
-        ArrowDownRight: (p) => <Icon {...p} d={[{type:'line',x1:7,y1:7,x2:17,y2:17},"M17 7v10H7"]} />,
-        Plus: (p) => <Icon {...p} d={[{type:'line',x1:12,y1:5,x2:12,y2:19},{type:'line',x1:5,y1:12,x2:19,y2:12}]} />,
-        QrCode: (p) => <Icon {...p} d={[{type:'rect',x:2,y:2,w:8,h:8,rx:1},{type:'rect',x:14,y:2,w:8,h:8,rx:1},{type:'rect',x:2,y:14,w:8,h:8,rx:1},"M14 14h.01","M20 14h.01","M14 20h.01","M20 20h.01","M17 17h.01"]} />,
-        ZoomIn: (p) => <Icon {...p} d={[{type:'circle',cx:11,cy:11,r:8},{type:'line',x1:21,y1:21,x2:16.65,y2:16.65},{type:'line',x1:11,y1:8,x2:11,y2:14},{type:'line',x1:8,y1:11,x2:14,y2:11}]} />,
-        ZoomOut: (p) => <Icon {...p} d={[{type:'circle',cx:11,cy:11,r:8},{type:'line',x1:21,y1:21,x2:16.65,y2:16.65},{type:'line',x1:8,y1:11,x2:14,y2:11}]} />,
-        RotateCcw: (p) => <Icon {...p} d={["M1 4v6h6","M3.51 15a9 9 0 1 0 2.13-9.36L1 10"]} />,
-        Locate: (p) => <Icon {...p} d={[{type:'line',x1:12,y1:2,x2:12,y2:6},{type:'line',x1:12,y1:18,x2:12,y2:22},{type:'line',x1:2,y1:12,x2:6,y2:12},{type:'line',x1:18,y1:12,x2:22,y2:12},{type:'circle',cx:12,cy:12,r:4}]} />,
-        Activity: (p) => <Icon {...p} d="M22 12h-4l-3 9L9 3l-3 9H2" />,
-        Gauge: (p) => <Icon {...p} d={["M12 15l3.5-7","M2 12a10 10 0 1 1 20 0"]} />,
-        Thermometer: (p) => <Icon {...p} d={["M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"]} />,
-        Zap: (p) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
-        Download: (p) => <Icon {...p} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"]} />,
-        RefreshCw: (p) => <Icon {...p} d={["M23 4v6h-6","M1 20v-6h6","M3.51 9a9 9 0 0 1 14.85-3.36L23 10","M1 14l4.64 4.36A9 9 0 0 0 20.49 15"]} />,
-        Play: (p) => <Icon {...p} d="M5 3l14 9-14 9V3z" />,
-        Grid: (p) => <Icon {...p} d={[{type:'rect',x:3,y:3,w:7,h:7},{type:'rect',x:14,y:3,w:7,h:7},{type:'rect',x:14,y:14,w:7,h:7},{type:'rect',x:3,y:14,w:7,h:7}]} />,
-        List: (p) => <Icon {...p} d={[{type:'line',x1:8,y1:6,x2:21,y2:6},{type:'line',x1:8,y1:12,x2:21,y2:12},{type:'line',x1:8,y1:18,x2:21,y2:18},{type:'line',x1:3,y1:6,x2:3.01,y2:6},{type:'line',x1:3,y1:12,x2:3.01,y2:12},{type:'line',x1:3,y1:18,x2:3.01,y2:18}]} />,
-        TrendingUp: (p) => <Icon {...p} d={["M23 6l-9.5 9.5-5-5L1 18","M17 6h6v6"]} />,
-        Target: (p) => <Icon {...p} d={[{type:'circle',cx:12,cy:12,r:10},{type:'circle',cx:12,cy:12,r:6},{type:'circle',cx:12,cy:12,r:2}]} />,
-        Star: (p) => <Icon {...p} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
-        ScanBarcode: (p) => <Icon {...p} d={["M3 7V5a2 2 0 0 1 2-2h2","M17 3h2a2 2 0 0 1 2 2v2","M21 17v2a2 2 0 0 1-2 2h-2","M7 21H5a2 2 0 0 1-2-2v-2",{type:'line',x1:8,y1:7,x2:8,y2:17},{type:'line',x1:12,y1:7,x2:12,y2:17},{type:'line',x1:16,y1:7,x2:16,y2:17}]} />,
-        Filter: (p) => <Icon {...p} d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />,
+const PATROLS=[
+  {id:"p1",name:"日班巡檢-A線",route:"B1F主機房完整巡檢",status:"completed",checkpoints:12,completed:12,time:"08:00-10:30",patrol:"王小明",items:[{name:"溫度檢查",result:"正常",val:"24.1°C"},{name:"濕度檢查",result:"正常",val:"45%"},{name:"電源狀態",result:"正常",val:"穩定"},{name:"異味檢查",result:"正常",val:"無"},{name:"漏水檢查",result:"正常",val:"無"}]},
+  {id:"p2",name:"日班巡檢-B線",route:"B2F電力設施巡檢",status:"in-progress",checkpoints:8,completed:5,time:"09:00-11:00",patrol:"李建華",items:[{name:"UPS狀態",result:"正常",val:"運行中"},{name:"電池溫度",result:"warning",val:"32°C"},{name:"輸出電壓",result:"正常",val:"220V"}]},
+  {id:"p3",name:"夜班巡檢-A線",route:"全區安全巡檢",status:"scheduled",checkpoints:15,completed:0,time:"22:00-00:30",patrol:"張志偉",items:[]},
+  {id:"p4",name:"特殊巡檢",route:"UPS緊急檢查",status:"scheduled",checkpoints:4,completed:0,time:"14:00-15:00",patrol:"陳大文",items:[]},
+];
+
+const WO=[
+  {id:"wo1",number:"WO-2026-0318-001",title:"Rack-C10 溫度異常處理",priority:"high",status:"in-progress",asset:"Rack-C10",assignee:"陳技師",created:"2026-03-18 08:15",due:"2026-03-18 17:00",desc:"Rack-C10 溫度持續超過 29°C，已排除空調異常，需檢查伺服器散熱模組。",history:[{time:"08:15",action:"工單建立"},{time:"08:30",action:"指派陳技師"},{time:"09:00",action:"技師到場檢查"},{time:"09:45",action:"發現風扇異常，申請備品"}]},
+  {id:"wo2",number:"WO-2026-0317-003",title:"CNC-002 定期保養",priority:"normal",status:"in-progress",asset:"CNC-002",assignee:"林技師",created:"2026-03-17 14:00",due:"2026-03-19 17:00",desc:"CNC-002 已達 2000 小時運行，需執行定期保養。",history:[{time:"14:00",action:"系統自動生成工單"},{time:"14:30",action:"指派林技師"}]},
+  {id:"wo3",number:"WO-2026-0318-002",title:"Core-SW01 韌體升級",priority:"low",status:"pending",asset:"Core-SW01",assignee:"待指派",created:"2026-03-18 09:30",due:"2026-03-22 17:00",desc:"Cisco Nexus 9300 韌體升級至 10.3(4a)，修復安全漏洞。",history:[{time:"09:30",action:"工單建立"}]},
+  {id:"wo4",number:"WO-2026-0316-001",title:"UPS-001 電池更換",priority:"high",status:"completed",asset:"UPS-001",assignee:"王技師",created:"2026-03-16 10:00",due:"2026-03-17 17:00",desc:"UPS-001 電池組壽命到期，需更換為新電池組。",history:[{time:"10:00",action:"工單建立"},{time:"10:30",action:"指派王技師"},{time:"13:00",action:"電池到貨"},{time:"15:30",action:"更換完成"},{time:"16:00",action:"測試通過，工單關閉"}]},
+  {id:"wo5",number:"WO-2026-0318-003",title:"監控室空調維修",priority:"urgent",status:"pending",asset:"監控室HVAC",assignee:"待指派",created:"2026-03-18 11:00",due:"2026-03-18 15:00",desc:"監控室空調無法啟動，室溫已達 30°C。",history:[{time:"11:00",action:"緊急工單建立"}]},
+];
+
+const KPI={totalSites:3,totalAssets:1056,activeAlerts:4,patrolCompletion:87.5,mtbf:2840,mttr:4.2,oee:91.3,workOrdersOpen:8};
+
+// ============ Utility ============
+const Badge=({children,variant="default",cls=""})=>{
+  const v={default:"bg-gray-100 text-gray-700",primary:"bg-blue-50 text-blue-700",success:"bg-green-50 text-green-700",warning:"bg-yellow-50 text-yellow-700",danger:"bg-red-50 text-red-700",info:"bg-blue-50 text-blue-600"};
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${v[variant]||v.default} ${cls}`}>{children}</span>;
+};
+const Dot=({s})=>{
+  const c={active:"bg-green-500",maintenance:"bg-yellow-500",warning:"bg-yellow-500",inactive:"bg-gray-400",critical:"bg-red-500"};
+  return <span className={`inline-block w-2 h-2 rounded-full ${c[s]||c.active}`}/>;
+};
+
+// ============ Detail Modal ============
+const DetailModal=({title,onClose,children})=>(
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.5)"}}>
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col slide-up overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><I.X size={18}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-6">{children}</div>
+    </div>
+  </div>
+);
+
+// ============ Three.js 3D Scene (Full Interactive) ============
+const ThreeScene=({selectedAsset,onAssetClick,siteData,onLabelPositions})=>{
+  const mountRef=useRef(null);
+  const stateRef=useRef({camera:null,scene:null,renderer:null,meshes:[],animId:null,isDragging:false,prevMouse:{x:0,y:0},spherical:{theta:0,phi:Math.PI/4,radius:40},target:new THREE.Vector3(0,3,0),autoRotate:true});
+
+  useEffect(()=>{
+    if(!mountRef.current)return;
+    const el=mountRef.current;
+    const S=stateRef.current;
+    const w=el.clientWidth,h=el.clientHeight;
+
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x0a1628);
+    scene.fog=new THREE.FogExp2(0x0a1628,0.006);
+    S.scene=scene;
+
+    const camera=new THREE.PerspectiveCamera(55,w/h,0.1,1000);
+    S.camera=camera;
+
+    const renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(w,h);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    el.appendChild(renderer.domElement);
+    S.renderer=renderer;
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0x334466,0.6));
+    const dl=new THREE.DirectionalLight(0xffeedd,1.0);dl.position.set(20,30,10);dl.castShadow=true;scene.add(dl);
+    scene.add(Object.assign(new THREE.PointLight(0x3b82f6,1.5,60),{position:new THREE.Vector3(-10,15,-10)}));
+    scene.add(Object.assign(new THREE.PointLight(0x06b6d4,1.0,50),{position:new THREE.Vector3(15,10,15)}));
+
+    // Ground + Grid
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0x0d1f3c,roughness:0.9}));
+    ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+    scene.add(Object.assign(new THREE.GridHelper(80,40,0x1e3a5f,0x162d50),{position:new THREE.Vector3(0,0.01,0)}));
+
+    // Building
+    const bldg=new THREE.Mesh(new THREE.BoxGeometry(18,10,14),new THREE.MeshPhysicalMaterial({color:0x1e3a5f,metalness:0.3,roughness:0.6,clearcoat:0.2}));
+    bldg.position.set(0,5,0);bldg.castShadow=true;scene.add(bldg);
+    for(let i=1;i<=3;i++){const fl=new THREE.Mesh(new THREE.BoxGeometry(18.1,0.05,14.1),new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.4}));fl.position.set(0,i*3,0);scene.add(fl);}
+    [-4,4].forEach(x=>{const ru=new THREE.Mesh(new THREE.BoxGeometry(4,2,3),new THREE.MeshPhysicalMaterial({color:0x334155,metalness:0.5,roughness:0.4}));ru.position.set(x,11,0);ru.castShadow=true;scene.add(ru);});
+
+    // Assets
+    const allAssets=[];
+    if(siteData?.floors)siteData.floors.forEach(f=>f.zones?.forEach(z=>z.assets?.forEach(a=>allAssets.push(a))));
+    const mats={active:new THREE.MeshPhysicalMaterial({color:0x10b981,metalness:0.6,roughness:0.3,emissive:0x064e3b,emissiveIntensity:0.2}),warning:new THREE.MeshPhysicalMaterial({color:0xf59e0b,metalness:0.6,roughness:0.3,emissive:0x78350f,emissiveIntensity:0.3}),maintenance:new THREE.MeshPhysicalMaterial({color:0x6366f1,metalness:0.6,roughness:0.3,emissive:0x312e81,emissiveIntensity:0.2})};
+    const rackGeo=new THREE.BoxGeometry(1.2,3.5,0.8);
+    const meshes=[];
+    const positions=[[-5,2,-3],[-3,2,-3],[-1,2,-3],[1,2,-3],[3,2,-3],[5,2,-3],[-5,2,0],[-3,2,0],[-1,2,0],[1,2,0],[3,2,0],[5,2,0],[-5,2,3],[-3,2,3],[-1,2,3],[1,2,3],[3,2,3],[5,2,3],[-5,5.5,-3],[-3,5.5,-3],[-1,5.5,-3],[1,5.5,-3],[-5,5.5,0],[-3,5.5,0],[-1,5.5,0],[1,5.5,0]];
+    positions.forEach((pos,i)=>{
+      const asset=allAssets[i%allAssets.length];
+      const st=asset?.status||"active";
+      const rack=new THREE.Mesh(rackGeo,mats[st]||mats.active);
+      rack.position.set(...pos);rack.castShadow=true;
+      rack.userData={id:asset?.id||`r${i}`,name:asset?.name||`Rack-${i}`,type:asset?.type||"Rack",status:st,assetData:asset};
+      scene.add(rack);meshes.push(rack);
+    });
+    S.meshes=meshes;
+
+    // LEDs
+    meshes.forEach(rack=>{
+      const c=rack.userData.status==="warning"?0xf59e0b:0x10b981;
+      for(let j=0;j<3;j++){const led=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshBasicMaterial({color:c}));led.position.copy(rack.position);led.position.x+=0.65;led.position.y+=0.5+j*0.8;scene.add(led);}
+    });
+    // Network lines
+    const lineMat=new THREE.LineBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.15});
+    for(let i=0;i<meshes.length-1;i++){if(Math.random()>0.5){const pts=[meshes[i].position.clone(),meshes[i+1].position.clone()];pts[0].y+=2;pts[1].y+=2;scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat));}}
+    // Surrounding
+    [[-18,2.5,-8],[20,2.5,5],[-15,2.5,12],[22,2.5,-10]].forEach(pos=>{const sb=new THREE.Mesh(new THREE.BoxGeometry(6,5,5),new THREE.MeshPhysicalMaterial({color:0x162d50,metalness:0.2,roughness:0.7}));sb.position.set(...pos);sb.castShadow=true;scene.add(sb);});
+    // Particles
+    const pCount=150;const pGeo=new THREE.BufferGeometry();const pPos=new Float32Array(pCount*3);
+    for(let i=0;i<pCount;i++){pPos[i*3]=(Math.random()-0.5)*80;pPos[i*3+1]=Math.random()*30+2;pPos[i*3+2]=(Math.random()-0.5)*80;}
+    pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));
+    const particles=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0x3b82f6,size:0.15,transparent:true,opacity:0.4}));
+    scene.add(particles);
+
+    // --- Camera orbit system ---
+    const updateCamera=()=>{
+      const sp=S.spherical;
+      camera.position.x=S.target.x+sp.radius*Math.sin(sp.phi)*Math.cos(sp.theta);
+      camera.position.y=S.target.y+sp.radius*Math.cos(sp.phi);
+      camera.position.z=S.target.z+sp.radius*Math.sin(sp.phi)*Math.sin(sp.theta);
+      camera.lookAt(S.target);
     };
+    updateCamera();
 
-    // ============================================================
-    // Mock Data
-    // ============================================================
-    const SITES_DATA = [
-      { id:"s1", name:"台北資料中心", type:"datacenter", address:"台北市大安區忠孝東路四段200號",
-        lat:25.0419, lng:121.5654, status:"active", assets:342, alerts:3,
-        floors:[
-          { id:"f1", name:"B2F 電力設施", level:-2, zones:[
-            { id:"z1", name:"UPS區", assets:[
-              { id:"a1", name:"UPS-001", type:"UPS", status:"active", temp:28.5, power:85, model:"APC Smart-UPS 3000" },
-              { id:"a2", name:"UPS-002", type:"UPS", status:"active", temp:27.3, power:72, model:"APC Smart-UPS 3000" },
-            ]},
-            { id:"z2", name:"配電區", assets:[
-              { id:"a3", name:"PDU-A01", type:"PDU", status:"active", temp:31.2, power:65, model:"Eaton ePDU G3" },
-            ]},
-          ]},
-          { id:"f2", name:"B1F 主機房", level:-1, zones:[
-            { id:"z3", name:"機櫃區A", assets:[
-              { id:"a4", name:"Rack-C08", type:"Server Rack", status:"active", temp:24.1, power:92, model:"Dell R370 42U",
-                subItems:[
-                  { id:"a4-1", name:"25U-26U: Dell R750", type:"Server", status:"active" },
-                  { id:"a4-2", name:"23U-24U: Dell R750", type:"Server", status:"maintenance" },
-                  { id:"a4-3", name:"20U-22U: NetApp AFF", type:"Storage", status:"active" },
-                ]
-              },
-              { id:"a5", name:"Rack-C09", type:"Server Rack", status:"active", temp:23.8, power:88, model:"Dell R370 42U" },
-              { id:"a6", name:"Rack-C10", type:"Server Rack", status:"warning", temp:29.5, power:95, model:"Dell R370 42U" },
-            ]},
-            { id:"z4", name:"機櫃區B", assets:[
-              { id:"a7", name:"Rack-C15", type:"Server Rack", status:"active", temp:22.9, power:78, model:"HPE G2 42U" },
-              { id:"a8", name:"Rack-C16", type:"Server Rack", status:"active", temp:23.1, power:81, model:"HPE G2 42U" },
-            ]},
-            { id:"z5", name:"網路區", assets:[
-              { id:"a9", name:"Core-SW01", type:"Switch", status:"active", temp:35.2, power:45, model:"Cisco Nexus 9300" },
-              { id:"a10", name:"Core-SW02", type:"Switch", status:"active", temp:34.8, power:43, model:"Cisco Nexus 9300" },
-            ]},
-          ]},
-          { id:"f3", name:"1F 管理中心", level:1, zones:[
-            { id:"z6", name:"監控室", assets:[
-              { id:"a11", name:"監控主機", type:"Workstation", status:"active", temp:26.0, power:35, model:"Dell Precision 7920" },
-            ]},
-          ]},
-        ]
-      },
-      { id:"s2", name:"新竹科技廠", type:"factory", address:"新竹市東區光復路二段101號",
-        lat:24.8067, lng:120.9717, status:"active", assets:528, alerts:1,
-        floors:[
-          { id:"f4", name:"1F 生產線", level:1, zones:[
-            { id:"z7", name:"CNC加工區", assets:[
-              { id:"a12", name:"CNC-001", type:"CNC Machine", status:"active", temp:42.1, power:78, model:"FANUC α-D21MiB5" },
-              { id:"a13", name:"CNC-002", type:"CNC Machine", status:"maintenance", temp:0, power:0, model:"FANUC α-D21MiB5" },
-            ]},
-          ]},
-        ]
-      },
-      { id:"s3", name:"高雄物流中心", type:"warehouse", address:"高雄市前鎮區成功二路88號",
-        lat:22.6273, lng:120.3014, status:"active", assets:186, alerts:0,
-        floors:[
-          { id:"f5", name:"1F 倉儲區", level:1, zones:[
-            { id:"z8", name:"A區", assets:[
-              { id:"a14", name:"堆高機-01", type:"Forklift", status:"active", temp:0, power:60, model:"Toyota 8FBN25" },
-            ]},
-          ]},
-        ]
-      },
-    ];
-
-    const PATROL_DATA = [
-      { id:"p1", name:"日班巡檢-A線", route:"B1F主機房完整巡檢", status:"completed", checkpoints:12, completed:12, time:"08:00-10:30", patrol:"王小明" },
-      { id:"p2", name:"日班巡檢-B線", route:"B2F電力設施巡檢", status:"in-progress", checkpoints:8, completed:5, time:"09:00-11:00", patrol:"李建華" },
-      { id:"p3", name:"夜班巡檢-A線", route:"全區安全巡檢", status:"scheduled", checkpoints:15, completed:0, time:"22:00-00:30", patrol:"張志偉" },
-      { id:"p4", name:"特殊巡檢", route:"UPS緊急檢查", status:"scheduled", checkpoints:4, completed:0, time:"14:00-15:00", patrol:"陳大文" },
-    ];
-
-    const WORK_ORDERS = [
-      { id:"wo1", number:"WO-2026-0318-001", title:"Rack-C10 溫度異常處理", priority:"high", status:"in-progress", asset:"Rack-C10", assignee:"陳技師", created:"2026-03-18 08:15", due:"2026-03-18 17:00" },
-      { id:"wo2", number:"WO-2026-0317-003", title:"CNC-002 定期保養", priority:"normal", status:"in-progress", asset:"CNC-002", assignee:"林技師", created:"2026-03-17 14:00", due:"2026-03-19 17:00" },
-      { id:"wo3", number:"WO-2026-0318-002", title:"Core-SW01 韌體升級", priority:"low", status:"pending", asset:"Core-SW01", assignee:"待指派", created:"2026-03-18 09:30", due:"2026-03-22 17:00" },
-      { id:"wo4", number:"WO-2026-0316-001", title:"UPS-001 電池更換", priority:"high", status:"completed", asset:"UPS-001", assignee:"王技師", created:"2026-03-16 10:00", due:"2026-03-17 17:00" },
-      { id:"wo5", number:"WO-2026-0318-003", title:"監控室空調維修", priority:"urgent", status:"pending", asset:"監控室HVAC", assignee:"待指派", created:"2026-03-18 11:00", due:"2026-03-18 15:00" },
-    ];
-
-    const KPI = { totalSites:3, totalAssets:1056, activeAlerts:4, patrolCompletion:87.5, mtbf:2840, mttr:4.2, oee:91.3, workOrdersOpen:8 };
-
-    // ============================================================
-    // Utility Components
-    // ============================================================
-    const Badge = ({ children, variant="default", className="" }) => {
-      const v = { default:"bg-gray-100 text-gray-700", primary:"bg-blue-50 text-blue-700", success:"bg-green-50 text-green-700", warning:"bg-yellow-50 text-yellow-700", danger:"bg-red-50 text-red-700", info:"bg-blue-50 text-blue-600" };
-      return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${v[variant]||v.default} ${className}`}>{children}</span>;
+    // Mouse controls
+    const onMouseDown=(e)=>{S.isDragging=true;S.prevMouse={x:e.clientX,y:e.clientY};S.autoRotate=false;};
+    const onMouseMove=(e)=>{
+      if(!S.isDragging)return;
+      const dx=e.clientX-S.prevMouse.x,dy=e.clientY-S.prevMouse.y;
+      if(e.buttons===1){// Left: rotate
+        S.spherical.theta-=dx*0.005;
+        S.spherical.phi=Math.max(0.2,Math.min(Math.PI/2-0.05,S.spherical.phi-dy*0.005));
+      }else if(e.buttons===2||e.buttons===4){// Right/Middle: pan
+        const right=new THREE.Vector3();const up=new THREE.Vector3();
+        camera.getWorldDirection(up);
+        right.crossVectors(up,camera.up).normalize();
+        up.copy(camera.up).normalize();
+        S.target.add(right.multiplyScalar(-dx*0.05));
+        S.target.add(up.multiplyScalar(dy*0.05));
+      }
+      S.prevMouse={x:e.clientX,y:e.clientY};
+      updateCamera();
     };
-
-    const StatusDot = ({ status }) => {
-      const c = { active:"bg-green-500", maintenance:"bg-yellow-500", warning:"bg-yellow-500", inactive:"bg-gray-400", critical:"bg-red-500" };
-      return <span className={`inline-block w-2 h-2 rounded-full ${c[status]||c.active}`} />;
+    const onMouseUp=()=>{S.isDragging=false;};
+    const onWheel=(e)=>{
+      e.preventDefault();
+      S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius+e.deltaY*0.04));
+      S.autoRotate=false;
+      updateCamera();
     };
-
-    // ============================================================
-    // 3D GIS Scene (Three.js)
-    // ============================================================
-    const ThreeScene = ({ selectedAsset, onAssetClick, siteData }) => {
-      const mountRef = useRef(null);
-      const animRef = useRef(null);
-
-      useEffect(() => {
-        if (!mountRef.current) return;
-        const el = mountRef.current;
-        const w = el.clientWidth, h = el.clientHeight;
-
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a1628);
-        scene.fog = new THREE.FogExp2(0x0a1628, 0.008);
-
-        const camera = new THREE.PerspectiveCamera(60, w/h, 0.1, 1000);
-        camera.position.set(30, 25, 30);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        el.appendChild(renderer.domElement);
-
-        // Lights
-        scene.add(new THREE.AmbientLight(0x334466, 0.6));
-        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
-        dirLight.position.set(20, 30, 10); dirLight.castShadow = true;
-        scene.add(dirLight);
-        const pl1 = new THREE.PointLight(0x3b82f6, 1.5, 60); pl1.position.set(-10, 15, -10); scene.add(pl1);
-        const pl2 = new THREE.PointLight(0x06b6d4, 1.0, 50); pl2.position.set(15, 10, 15); scene.add(pl2);
-
-        // Ground + Grid
-        const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color:0x0d1f3c, roughness:0.9 }));
-        ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-        const grid = new THREE.GridHelper(80, 40, 0x1e3a5f, 0x162d50); grid.position.y = 0.01; scene.add(grid);
-
-        // Main building
-        const bldgMat = new THREE.MeshPhysicalMaterial({ color:0x1e3a5f, metalness:0.3, roughness:0.6, clearcoat:0.2 });
-        const bldg = new THREE.Mesh(new THREE.BoxGeometry(18, 10, 14), bldgMat);
-        bldg.position.set(0, 5, 0); bldg.castShadow = true; scene.add(bldg);
-
-        // Floor lines
-        for (let i = 1; i <= 3; i++) {
-          const fl = new THREE.Mesh(new THREE.BoxGeometry(18.1, 0.05, 14.1), new THREE.MeshBasicMaterial({ color:0x3b82f6, transparent:true, opacity:0.4 }));
-          fl.position.set(0, i*3, 0); scene.add(fl);
-        }
-
-        // Roof units
-        const roofMat = new THREE.MeshPhysicalMaterial({ color:0x334155, metalness:0.5, roughness:0.4 });
-        [-4, 4].forEach(x => {
-          const ru = new THREE.Mesh(new THREE.BoxGeometry(4, 2, 3), roofMat);
-          ru.position.set(x, 11, 0); ru.castShadow = true; scene.add(ru);
-        });
-
-        // Collect assets
-        const allAssets = [];
-        if (siteData?.floors) siteData.floors.forEach(f => f.zones?.forEach(z => z.assets?.forEach(a => allAssets.push(a))));
-
-        const mats = {
-          active: new THREE.MeshPhysicalMaterial({ color:0x10b981, metalness:0.6, roughness:0.3, emissive:0x064e3b, emissiveIntensity:0.2 }),
-          warning: new THREE.MeshPhysicalMaterial({ color:0xf59e0b, metalness:0.6, roughness:0.3, emissive:0x78350f, emissiveIntensity:0.3 }),
-          maintenance: new THREE.MeshPhysicalMaterial({ color:0x6366f1, metalness:0.6, roughness:0.3, emissive:0x312e81, emissiveIntensity:0.2 }),
-        };
-
-        const rackGeo = new THREE.BoxGeometry(1.2, 3.5, 0.8);
-        const meshes = [];
-        const positions = [
-          [-5,2,-3],[-3,2,-3],[-1,2,-3],[1,2,-3],[3,2,-3],[5,2,-3],
-          [-5,2,0],[-3,2,0],[-1,2,0],[1,2,0],[3,2,0],[5,2,0],
-          [-5,2,3],[-3,2,3],[-1,2,3],[1,2,3],[3,2,3],[5,2,3],
-          [-5,5.5,-3],[-3,5.5,-3],[-1,5.5,-3],[1,5.5,-3],
-          [-5,5.5,0],[-3,5.5,0],[-1,5.5,0],[1,5.5,0],
-        ];
-
-        positions.forEach((pos, i) => {
-          const asset = allAssets[i % allAssets.length];
-          const st = asset?.status || "active";
-          const rack = new THREE.Mesh(rackGeo, mats[st] || mats.active);
-          rack.position.set(...pos); rack.castShadow = true;
-          rack.userData = { id:asset?.id||`r${i}`, name:asset?.name||`Rack-${i}`, type:"equipment", status:st, assetData:asset };
-          scene.add(rack); meshes.push(rack);
-        });
-
-        // LED indicators
-        const ledGeo = new THREE.SphereGeometry(0.08, 8, 8);
-        meshes.forEach(rack => {
-          const c = rack.userData.status === "warning" ? 0xf59e0b : 0x10b981;
-          for (let j = 0; j < 3; j++) {
-            const led = new THREE.Mesh(ledGeo, new THREE.MeshBasicMaterial({ color:c }));
-            led.position.copy(rack.position);
-            led.position.x += 0.65; led.position.y += 0.5 + j*0.8;
-            scene.add(led);
-          }
-        });
-
-        // Network lines
-        const lineMat = new THREE.LineBasicMaterial({ color:0x3b82f6, transparent:true, opacity:0.15 });
-        for (let i = 0; i < meshes.length-1; i++) {
-          if (Math.random() > 0.5) {
-            const pts = [meshes[i].position.clone(), meshes[i+1].position.clone()];
-            pts[0].y += 2; pts[1].y += 2;
-            scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
-          }
-        }
-
-        // Surrounding buildings
-        const sbMat = new THREE.MeshPhysicalMaterial({ color:0x162d50, metalness:0.2, roughness:0.7 });
-        [[-18,2.5,-8],[20,2.5,5],[-15,2.5,12],[22,2.5,-10]].forEach(pos => {
-          const sb = new THREE.Mesh(new THREE.BoxGeometry(6, 5, 5), sbMat);
-          sb.position.set(...pos); sb.castShadow = true; scene.add(sb);
-        });
-
-        // Particles
-        const pCount = 200;
-        const pGeo = new THREE.BufferGeometry();
-        const pPos = new Float32Array(pCount * 3);
-        for (let i = 0; i < pCount; i++) { pPos[i*3] = (Math.random()-0.5)*80; pPos[i*3+1] = Math.random()*30+2; pPos[i*3+2] = (Math.random()-0.5)*80; }
-        pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
-        const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color:0x3b82f6, size:0.15, transparent:true, opacity:0.5 }));
-        scene.add(particles);
-
-        // Raycaster
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        const onClick = (e) => {
-          const rect = el.getBoundingClientRect();
-          mouse.x = ((e.clientX - rect.left)/rect.width)*2-1;
-          mouse.y = -((e.clientY - rect.top)/rect.height)*2+1;
-          raycaster.setFromCamera(mouse, camera);
-          const hits = raycaster.intersectObjects(meshes);
-          if (hits.length > 0) onAssetClick?.(hits[0].object.userData);
-        };
-        el.addEventListener("click", onClick);
-
-        // Animate
-        let t = 0;
-        const animate = () => {
-          animRef.current = requestAnimationFrame(animate);
-          t += 0.01;
-          camera.position.x = 30*Math.cos(t*0.15);
-          camera.position.z = 30*Math.sin(t*0.15);
-          camera.lookAt(0, 3, 0);
-
-          const pp = particles.geometry.attributes.position.array;
-          for (let i = 0; i < pCount; i++) { pp[i*3+1] += 0.02; if (pp[i*3+1] > 35) pp[i*3+1] = 2; }
-          particles.geometry.attributes.position.needsUpdate = true;
-
-          meshes.forEach(m => {
-            m.scale.setScalar(selectedAsset && m.userData.id === selectedAsset.id ? 1.0+0.1*Math.sin(t*4) : 1.0);
-          });
-
-          renderer.render(scene, camera);
-        };
-        animate();
-
-        const onResize = () => {
-          const nw = el.clientWidth, nh = el.clientHeight;
-          camera.aspect = nw/nh; camera.updateProjectionMatrix(); renderer.setSize(nw, nh);
-        };
-        window.addEventListener("resize", onResize);
-
-        return () => {
-          cancelAnimationFrame(animRef.current);
-          el.removeEventListener("click", onClick);
-          window.removeEventListener("resize", onResize);
-          if (renderer.domElement.parentNode) el.removeChild(renderer.domElement);
-          renderer.dispose();
-        };
-      }, [siteData]);
-
-      return <div ref={mountRef} className="three-canvas" style={{width:"100%",height:"100%"}} />;
+    const onDblClick=(e)=>{
+      // Double click: zoom to clicked point
+      const rect=el.getBoundingClientRect();
+      const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      const raycaster=new THREE.Raycaster();
+      raycaster.setFromCamera(mouse,camera);
+      const hits=raycaster.intersectObjects(meshes);
+      if(hits.length>0){
+        const pt=hits[0].point;
+        S.target.set(pt.x,pt.y,pt.z);
+        S.spherical.radius=Math.max(8,S.spherical.radius*0.5);
+        updateCamera();
+        onAssetClick?.(hits[0].object.userData);
+      } else {
+        // Zoom in toward mouse direction
+        S.spherical.radius=Math.max(8,S.spherical.radius*0.7);
+        updateCamera();
+      }
     };
+    const onClick=(e)=>{
+      const rect=el.getBoundingClientRect();
+      const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      const raycaster=new THREE.Raycaster();
+      raycaster.setFromCamera(mouse,camera);
+      const hits=raycaster.intersectObjects(meshes);
+      if(hits.length>0)onAssetClick?.(hits[0].object.userData);
+    };
+    const onContext=(e)=>e.preventDefault();
 
-    // ============================================================
-    // Layer Tree
-    // ============================================================
-    const LayerTree = ({ data, selectedId, onSelect, searchQuery }) => {
-      const [expanded, setExpanded] = useState({ s1:true, f2:true });
-      const toggle = (id) => setExpanded(p => ({...p, [id]:!p[id]}));
-      const match = (name) => !searchQuery || name.toLowerCase().includes(searchQuery.toLowerCase());
+    el.addEventListener("mousedown",onMouseDown);el.addEventListener("mousemove",onMouseMove);
+    el.addEventListener("mouseup",onMouseUp);el.addEventListener("wheel",onWheel,{passive:false});
+    el.addEventListener("dblclick",onDblClick);el.addEventListener("click",onClick);
+    el.addEventListener("contextmenu",onContext);
 
-      const renderAsset = (asset, depth=4) => {
-        if (!match(asset.name) && !match(asset.type||"")) return null;
-        return (
-          <div key={asset.id} onClick={() => onSelect(asset)}
-            className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer text-sm transition-all ${selectedId===asset.id ? "bg-blue-900 bg-opacity-40 text-blue-300" : "text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-gray-200"}`}
-            style={{paddingLeft:depth*16}}>
-            <StatusDot status={asset.status} />
-            <span className="truncate flex-1">{asset.name}</span>
-            <span className="text-xs text-gray-600">{asset.type}</span>
+    // Touch controls
+    let touchStart=null,touchDist=null;
+    const onTouchStart=(e)=>{
+      if(e.touches.length===1){S.isDragging=true;S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};S.autoRotate=false;}
+      if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;touchDist=Math.sqrt(dx*dx+dy*dy);}
+    };
+    const onTouchMove=(e)=>{
+      e.preventDefault();
+      if(e.touches.length===1&&S.isDragging){
+        const dx=e.touches[0].clientX-S.prevMouse.x,dy=e.touches[0].clientY-S.prevMouse.y;
+        S.spherical.theta-=dx*0.005;S.spherical.phi=Math.max(0.2,Math.min(Math.PI/2-0.05,S.spherical.phi-dy*0.005));
+        S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};updateCamera();
+      }
+      if(e.touches.length===2&&touchDist){
+        const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;
+        const newDist=Math.sqrt(dx*dx+dy*dy);
+        S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius*(touchDist/newDist)));
+        touchDist=newDist;updateCamera();
+      }
+    };
+    const onTouchEnd=()=>{S.isDragging=false;touchDist=null;};
+    el.addEventListener("touchstart",onTouchStart,{passive:false});
+    el.addEventListener("touchmove",onTouchMove,{passive:false});
+    el.addEventListener("touchend",onTouchEnd);
+
+    // Animate
+    let t=0;
+    const animate=()=>{
+      S.animId=requestAnimationFrame(animate);t+=0.01;
+      if(S.autoRotate){S.spherical.theta+=0.002;updateCamera();}
+      const pp=particles.geometry.attributes.position.array;
+      for(let i=0;i<pCount;i++){pp[i*3+1]+=0.02;if(pp[i*3+1]>35)pp[i*3+1]=2;}
+      particles.geometry.attributes.position.needsUpdate=true;
+      meshes.forEach(m=>{m.scale.setScalar(selectedAsset&&m.userData.id===selectedAsset.id?1.0+0.1*Math.sin(t*4):1.0);});
+      renderer.render(scene,camera);
+
+      // Project labels to screen
+      if(onLabelPositions){
+        const labels=[];
+        meshes.forEach(m=>{
+          const pos=m.position.clone();pos.y+=2.2;
+          const projected=pos.project(camera);
+          const x=(projected.x*0.5+0.5)*w;
+          const y=(-projected.y*0.5+0.5)*h;
+          if(projected.z<1)labels.push({id:m.userData.id,name:m.userData.name,status:m.userData.status,x,y,data:m.userData});
+        });
+        onLabelPositions(labels);
+      }
+    };
+    animate();
+
+    const onResize=()=>{const nw=el.clientWidth,nh=el.clientHeight;camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};
+    window.addEventListener("resize",onResize);
+
+    return()=>{
+      cancelAnimationFrame(S.animId);
+      el.removeEventListener("mousedown",onMouseDown);el.removeEventListener("mousemove",onMouseMove);
+      el.removeEventListener("mouseup",onMouseUp);el.removeEventListener("wheel",onWheel);
+      el.removeEventListener("dblclick",onDblClick);el.removeEventListener("click",onClick);
+      el.removeEventListener("contextmenu",onContext);
+      el.removeEventListener("touchstart",onTouchStart);el.removeEventListener("touchmove",onTouchMove);el.removeEventListener("touchend",onTouchEnd);
+      window.removeEventListener("resize",onResize);
+      if(renderer.domElement.parentNode)el.removeChild(renderer.domElement);renderer.dispose();
+    };
+  },[siteData]);
+
+  return <div ref={mountRef} className="three-canvas" style={{width:"100%",height:"100%"}}/>;
+};
+
+// ============ Cesium Map ============
+const CesiumMap=({sites})=>{
+  const ref=useRef(null);
+  const viewerRef=useRef(null);
+  useEffect(()=>{
+    if(!ref.current||viewerRef.current)return;
+    try{
+      Cesium.Ion.defaultAccessToken='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjI0MWIwNy1kNjRkLTQ4NjktODZkMS02OTczMTBhMzI2ZGQiLCJpZCI6MjY0MzM4LCJpYXQiOjE3MzUzMTY5MDh9.v1sBMjSmxVDrWv-4dI41lGRfGtH2djMmLU1U8Z2xWRE';
+      const viewer=new Cesium.Viewer(ref.current,{
+        terrainProvider:Cesium.createWorldTerrain(),animation:false,timeline:false,baseLayerPicker:false,
+        fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,
+        infoBox:true,sceneModePicker:false,selectionIndicator:true,navigationHelpButton:false,
+      });
+      viewerRef.current=viewer;
+      // Add site markers
+      sites.forEach(site=>{
+        viewer.entities.add({
+          name:site.name,position:Cesium.Cartesian3.fromDegrees(site.lng,site.lat,100),
+          billboard:{image:Cesium.buildModuleUrl('Assets/Textures/maki/marker.png'),width:32,height:32,verticalOrigin:Cesium.VerticalOrigin.BOTTOM},
+          label:{text:site.name,font:'14px sans-serif',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-36)},
+          description:`<div><b>${site.name}</b><br/>地址：${site.address}<br/>資產：${site.assets} 件<br/>告警：${site.alerts} 則</div>`,
+        });
+      });
+      viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(121.0,24.0,800000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-45),roll:0}});
+    }catch(e){console.error("Cesium init error:",e);}
+    return()=>{if(viewerRef.current){viewerRef.current.destroy();viewerRef.current=null;}};
+  },[]);
+  return <div ref={ref} style={{width:"100%",height:"100%"}}/>;
+};
+
+// ============ Mapbox Map ============
+const MapboxMap=({sites})=>{
+  const ref=useRef(null);
+  const mapRef=useRef(null);
+  useEffect(()=>{
+    if(!ref.current||mapRef.current)return;
+    try{
+      mapboxgl.accessToken='pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+      const map=new mapboxgl.Map({
+        container:ref.current,style:'mapbox://styles/mapbox/dark-v11',
+        center:[121.0,24.0],zoom:7,pitch:45,bearing:0,
+      });
+      mapRef.current=map;
+      map.addControl(new mapboxgl.NavigationControl(),'top-right');
+      map.on('load',()=>{
+        sites.forEach(site=>{
+          const popup=new mapboxgl.Popup({offset:25}).setHTML(
+            `<div style="font-family:sans-serif"><b>${site.name}</b><br/><span style="color:#666">${site.address}</span><br/>資產：${site.assets} 件 | 告警：${site.alerts} 則</div>`
+          );
+          new mapboxgl.Marker({color:site.alerts>0?'#f59e0b':'#3b82f6'})
+            .setLngLat([site.lng,site.lat]).setPopup(popup).addTo(map);
+        });
+      });
+    }catch(e){console.error("Mapbox init error:",e);}
+    return()=>{if(mapRef.current){mapRef.current.remove();mapRef.current=null;}};
+  },[]);
+  return <div ref={ref} style={{width:"100%",height:"100%"}}/>;
+};
+
+// ============ Layer Tree ============
+const LayerTree=({data,selectedId,onSelect,sq})=>{
+  const[exp,setExp]=useState({s1:true,f2:true});
+  const toggle=(id)=>setExp(p=>({...p,[id]:!p[id]}));
+  const match=(n)=>!sq||n.toLowerCase().includes(sq.toLowerCase());
+  const renderA=(a,d=4)=>{
+    if(!match(a.name)&&!match(a.type||""))return null;
+    return(<div key={a.id} onClick={()=>onSelect(a)} className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer text-sm transition-all ${selectedId===a.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-gray-200"}`} style={{paddingLeft:d*16}}>
+      <Dot s={a.status}/><span className="truncate flex-1">{a.name}</span><span className="text-xs text-gray-600">{a.type}</span>
+    </div>);
+  };
+  return(<div className="text-sm">{data.map(site=>(
+    <div key={site.id}>
+      <div onClick={()=>{toggle(site.id);onSelect(site);}} className={`flex items-center gap-2 py-2 px-2 rounded cursor-pointer font-medium transition-all ${selectedId===site.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-200 hover:bg-white hover:bg-opacity-5"}`}>
+        {exp[site.id]?<I.ChevDown size={14}/>:<I.ChevRight size={14}/>}<I.Building size={14} className="text-blue-400"/><span className="truncate flex-1">{site.name}</span>{site.alerts>0&&<Badge variant="danger">{site.alerts}</Badge>}
+      </div>
+      {exp[site.id]&&site.floors?.map(fl=>(
+        <div key={fl.id}>
+          <div onClick={()=>{toggle(fl.id);onSelect(fl);}} className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer transition-all ${selectedId===fl.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-300 hover:bg-white hover:bg-opacity-5"}`} style={{paddingLeft:24}}>
+            {exp[fl.id]?<I.ChevDown size={12}/>:<I.ChevRight size={12}/>}<I.Layers size={12} className="text-blue-400"/><span className="truncate">{fl.name}</span>
           </div>
-        );
-      };
-
-      return (
-        <div className="text-sm">
-          {data.map(site => (
-            <div key={site.id}>
-              <div onClick={() => { toggle(site.id); onSelect(site); }}
-                className={`flex items-center gap-2 py-2 px-2 rounded cursor-pointer font-medium transition-all ${selectedId===site.id ? "bg-blue-900 bg-opacity-40 text-blue-300" : "text-gray-200 hover:bg-white hover:bg-opacity-5"}`}>
-                {expanded[site.id] ? <Icons.ChevronDown size={14}/> : <Icons.ChevronRight size={14}/>}
-                <Icons.Building2 size={14} className="text-blue-400"/>
-                <span className="truncate flex-1">{site.name}</span>
-                {site.alerts > 0 && <Badge variant="danger">{site.alerts}</Badge>}
-              </div>
-              {expanded[site.id] && site.floors?.map(floor => (
-                <div key={floor.id}>
-                  <div onClick={() => { toggle(floor.id); onSelect(floor); }}
-                    className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer transition-all ${selectedId===floor.id ? "bg-blue-900 bg-opacity-40 text-blue-300" : "text-gray-300 hover:bg-white hover:bg-opacity-5"}`}
-                    style={{paddingLeft:24}}>
-                    {expanded[floor.id] ? <Icons.ChevronDown size={12}/> : <Icons.ChevronRight size={12}/>}
-                    <Icons.Layers size={12} className="text-blue-400"/>
-                    <span className="truncate">{floor.name}</span>
-                  </div>
-                  {expanded[floor.id] && floor.zones?.map(zone => (
-                    <div key={zone.id}>
-                      <div className="flex items-center gap-2 py-1 px-2 text-gray-500 text-xs" style={{paddingLeft:40}}>
-                        <Icons.MapPin size={10} className="text-gray-600"/>
-                        <span>{zone.name}</span>
-                      </div>
-                      {zone.assets?.map(a => (
-                        <React.Fragment key={a.id}>
-                          {renderAsset(a)}
-                          {a.subItems?.map(sub => renderAsset(sub, 5))}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ))}
+          {exp[fl.id]&&fl.zones?.map(z=>(
+            <div key={z.id}>
+              <div className="flex items-center gap-2 py-1 px-2 text-gray-500 text-xs" style={{paddingLeft:40}}><I.MapPin size={10} className="text-gray-600"/><span>{z.name}</span></div>
+              {z.assets?.map(a=>(<React.Fragment key={a.id}>{renderA(a)}{a.subItems?.map(sub=>renderA(sub,5))}</React.Fragment>))}
             </div>
           ))}
         </div>
-      );
-    };
+      ))}
+    </div>
+  ))}</div>);
+};
 
-    // ============================================================
-    // GIS Search Overlay
-    // ============================================================
-    const GISSearch = ({ sites, onSelect, onClose }) => {
-      const [query, setQuery] = useState("");
-      const allItems = useMemo(() => {
-        const items = [];
-        sites.forEach(s => {
-          items.push({...s, _type:"site", _path:s.name});
-          s.floors?.forEach(f => {
-            items.push({...f, _type:"floor", _path:`${s.name} › ${f.name}`});
-            f.zones?.forEach(z => {
-              items.push({...z, _type:"zone", _path:`${s.name} › ${f.name} › ${z.name}`});
-              z.assets?.forEach(a => {
-                items.push({...a, _type:"asset", _path:`${s.name} › ${f.name} › ${z.name} › ${a.name}`});
-                a.subItems?.forEach(sub => items.push({...sub, _type:"sub", _path:`... › ${a.name} › ${sub.name}`}));
-              });
-            });
-          });
-        });
-        return items;
-      }, [sites]);
-
-      const results = query.length > 0 ? allItems.filter(it =>
-        it.name?.toLowerCase().includes(query.toLowerCase()) ||
-        it.type?.toLowerCase().includes(query.toLowerCase()) ||
-        it.model?.toLowerCase().includes(query.toLowerCase()) ||
-        it.address?.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 10) : [];
-
-      const typeIcons = { site:"Building2", floor:"Layers", zone:"MapPin", asset:"Server", sub:"Cpu" };
-
-      return (
-        <div className="absolute top-4 left-4 right-4 z-20" style={{maxWidth:480}}>
-          <div className="rounded-xl overflow-hidden shadow-2xl" style={{background:"rgba(15,23,42,0.95)", backdropFilter:"blur(20px)", border:"1px solid rgba(71,85,105,0.4)"}}>
-            <div className="flex items-center gap-3 px-4 py-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-              <Icons.Search size={16} className="text-gray-400"/>
-              <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="搜尋設備、位置、資產編號..."
-                className="flex-1 bg-transparent text-white text-sm outline-none" style={{caretColor:"#60a5fa"}}/>
-              <button onClick={onClose} className="text-gray-400 hover:text-white"><Icons.X size={16}/></button>
-            </div>
-            {results.length > 0 && (
-              <div style={{maxHeight:280, overflowY:"auto"}}>
-                {results.map((item, i) => {
-                  const IconComp = Icons[typeIcons[item._type]] || Icons.Box;
-                  return (
-                    <button key={i} onClick={() => { onSelect(item); onClose(); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white hover:bg-opacity-5 transition-colors text-left">
-                      <IconComp size={15} className="text-blue-400 flex-shrink-0"/>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm text-white truncate">{item.name}</div>
-                        <div className="text-xs text-gray-500 truncate">{item._path}</div>
-                      </div>
-                      {item.status && <StatusDot status={item.status}/>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {query && results.length === 0 && <div className="px-4 py-6 text-center text-gray-500 text-sm">未找到相關結果</div>}
-          </div>
+// ============ GIS Search ============
+const GISSearch=({sites,onSelect,onClose})=>{
+  const[q,setQ]=useState("");
+  const all=useMemo(()=>{const items=[];sites.forEach(s=>{items.push({...s,_t:"site",_p:s.name});s.floors?.forEach(f=>{items.push({...f,_t:"floor",_p:`${s.name} › ${f.name}`});f.zones?.forEach(z=>{items.push({...z,_t:"zone",_p:`${s.name} › ${f.name} › ${z.name}`});z.assets?.forEach(a=>{items.push({...a,_t:"asset",_p:`${s.name} › ... › ${a.name}`});a.subItems?.forEach(sub=>items.push({...sub,_t:"sub",_p:`... › ${a.name} › ${sub.name}`}));});});});});return items;},[sites]);
+  const results=q.length>0?all.filter(it=>it.name?.toLowerCase().includes(q.toLowerCase())||it.type?.toLowerCase().includes(q.toLowerCase())||(it.model||"").toLowerCase().includes(q.toLowerCase())||(it.address||"").toLowerCase().includes(q.toLowerCase())).slice(0,10):[];
+  return(
+    <div className="absolute top-4 left-4 right-4 z-20" style={{maxWidth:480}}>
+      <div className="rounded-xl overflow-hidden shadow-2xl" style={{background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",border:"1px solid rgba(71,85,105,0.4)"}}>
+        <div className="flex items-center gap-3 px-4 py-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
+          <I.Search size={16} className="text-gray-400"/>
+          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="搜尋設備、位置、型號..." className="flex-1 bg-transparent text-white text-sm outline-none"/>
+          <button onClick={onClose} className="text-gray-400 hover:text-white"><I.X size={16}/></button>
         </div>
-      );
-    };
+        {results.length>0&&<div style={{maxHeight:280,overflowY:"auto"}}>{results.map((it,i)=>(
+          <button key={i} onClick={()=>{onSelect(it);onClose();}} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white hover:bg-opacity-5 transition-colors text-left">
+            <I.Server size={15} className="text-blue-400 flex-shrink-0"/><div className="min-w-0 flex-1"><div className="text-sm text-white truncate">{it.name}</div><div className="text-xs text-gray-500 truncate">{it._p}</div></div>{it.status&&<Dot s={it.status}/>}
+          </button>
+        ))}</div>}
+        {q&&results.length===0&&<div className="px-4 py-6 text-center text-gray-500 text-sm">未找到相關結果</div>}
+      </div>
+    </div>
+  );
+};
 
-    // ============================================================
-    // Asset Info Panel (Right side in GIS)
-    // ============================================================
-    const AssetInfoPanel = ({ asset, onClose }) => {
-      if (!asset) return null;
-      const d = asset.assetData || asset;
-      return (
-        <div className="slide-in-right flex flex-col overflow-hidden" style={{width:300, background:"rgba(15,23,42,0.95)", backdropFilter:"blur(20px)", borderLeft:"1px solid rgba(71,85,105,0.4)"}}>
-          <div className="p-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-            <h3 className="text-white font-semibold text-sm truncate">{d.name || asset.name}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-white"><Icons.X size={16}/></button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
-                <div className="text-xs text-gray-500 mb-1">狀態</div>
-                <div className="flex items-center gap-2"><StatusDot status={d.status||"active"}/><span className="text-sm text-white">{d.status||"Active"}</span></div>
-              </div>
-              <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
-                <div className="text-xs text-gray-500 mb-1">類型</div>
-                <span className="text-sm text-white">{d.type||"Equipment"}</span>
-              </div>
-            </div>
-            {d.model && <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
-              <div className="text-xs text-gray-500 mb-1">型號</div>
-              <span className="text-sm text-white">{d.model}</span>
-            </div>}
-            {(d.temp > 0 || d.power > 0) && (
-              <>
-                <div className="text-xs text-gray-500 uppercase tracking-wider pt-1">即時監控</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {d.temp > 0 && <div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}>
-                    <Icons.Thermometer size={14} className={d.temp > 28 ? "text-yellow-400":"text-blue-400"}/>
-                    <div><div className="text-xs text-gray-400">溫度</div><div className={`text-sm font-bold font-mono ${d.temp > 28 ? "text-yellow-400":"text-blue-400"}`}>{d.temp}°C</div></div>
-                  </div>}
-                  {d.power > 0 && <div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}>
-                    <Icons.Zap size={14} className={d.power > 90 ? "text-red-400":"text-blue-400"}/>
-                    <div><div className="text-xs text-gray-400">負載</div><div className={`text-sm font-bold font-mono ${d.power > 90 ? "text-red-400":"text-blue-400"}`}>{d.power}%</div></div>
-                  </div>}
-                </div>
-                <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
-                  <div className="flex justify-between mb-1"><span className="text-xs text-gray-400">功率使用率</span><span className="text-xs text-white font-mono">{d.power}%</span></div>
-                  <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(51,65,85,0.8)"}}>
-                    <div className={`h-full rounded-full transition-all ${d.power > 90 ? "bg-red-500" : d.power > 75 ? "bg-yellow-500" : "bg-blue-500"}`} style={{width:`${d.power}%`}}/>
-                  </div>
-                </div>
-              </>
-            )}
-            {d.subItems && <div>
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">子設備</div>
-              <div className="space-y-1.5">
-                {d.subItems.map(sub => (
-                  <div key={sub.id} className="rounded-lg p-2.5 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}>
-                    <StatusDot status={sub.status}/>
-                    <div className="flex-1 min-w-0"><div className="text-xs text-white truncate">{sub.name}</div><div className="text-xs text-gray-500">{sub.type}</div></div>
-                  </div>
-                ))}
-              </div>
-            </div>}
-            <div className="flex gap-2 pt-2">
-              <button className="flex-1 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">建立工單</button>
-              <button className="flex-1 py-2 text-gray-200 text-xs rounded-lg hover:bg-gray-700 transition-colors" style={{background:"rgba(51,65,85,0.6)"}}>維護記錄</button>
-            </div>
-          </div>
+// ============ Asset Info Panel ============
+const AssetPanel=({asset,onClose})=>{
+  if(!asset)return null;const d=asset.assetData||asset;
+  return(
+    <div className="slide-in-right flex flex-col overflow-hidden" style={{width:300,background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",borderLeft:"1px solid rgba(71,85,105,0.4)"}}>
+      <div className="p-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
+        <h3 className="text-white font-semibold text-sm truncate">{d.name||asset.name}</h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-white"><I.X size={16}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">狀態</div><div className="flex items-center gap-2"><Dot s={d.status||"active"}/><span className="text-sm text-white">{d.status||"Active"}</span></div></div>
+          <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">類型</div><span className="text-sm text-white">{d.type||"Equipment"}</span></div>
         </div>
-      );
-    };
-
-    // ============================================================
-    // GIS Module
-    // ============================================================
-    const GISModule = () => {
-      const [selectedAsset, setSelectedAsset] = useState(null);
-      const [showSearch, setShowSearch] = useState(false);
-      const [layerSearch, setLayerSearch] = useState("");
-      const [mapProvider, setMapProvider] = useState("cesium");
-      const [showPanel, setShowPanel] = useState(true);
-      const [showInfo, setShowInfo] = useState(false);
-
-      const handleAssetClick = (data) => { setSelectedAsset(data); setShowInfo(true); };
-
-      return (
-        <div className="flex" style={{height:"100%", background:"#0a1628"}}>
-          {/* Left Layer Panel */}
-          {showPanel && (
-            <div className="slide-in-left flex flex-col flex-shrink-0" style={{width:280, background:"rgba(15,23,42,0.95)", backdropFilter:"blur(20px)", borderRight:"1px solid rgba(71,85,105,0.4)"}}>
-              <div className="p-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-white text-sm font-semibold flex items-center gap-2"><Icons.Layers size={14} className="text-blue-400"/> 圖層管理</h3>
-                  <button onClick={() => setShowPanel(false)} className="text-gray-400 hover:text-white"><Icons.ChevronLeft size={16}/></button>
-                </div>
-                <div className="relative">
-                  <Icons.Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500"/>
-                  <input value={layerSearch} onChange={e => setLayerSearch(e.target.value)} placeholder="搜尋圖層..."
-                    className="w-full rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none" style={{background:"rgba(30,41,59,0.6)", border:"1px solid rgba(71,85,105,0.4)", caretColor:"#60a5fa"}}/>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-2">
-                <LayerTree data={SITES_DATA} selectedId={selectedAsset?.id} onSelect={handleAssetClick} searchQuery={layerSearch}/>
-              </div>
-              <div className="p-3" style={{borderTop:"1px solid rgba(71,85,105,0.3)"}}>
-                <button className="w-full py-2 text-blue-400 text-xs rounded-lg flex items-center justify-center gap-2 hover:bg-blue-900 hover:bg-opacity-30 transition-colors" style={{background:"rgba(37,99,235,0.1)", border:"1px solid rgba(37,99,235,0.3)"}}>
-                  <Icons.Plus size={14}/> 新增管理據點
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Main 3D Viewport */}
-          <div className="flex-1 relative overflow-hidden">
-            {/* Top controls */}
-            <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-              {!showPanel && <button onClick={() => setShowPanel(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}><Icons.Layers size={16}/></button>}
-              <button onClick={() => setShowSearch(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}><Icons.Search size={16}/></button>
-              <div className="flex rounded-lg overflow-hidden" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}>
-                {["google","cesium","mapbox"].map(p => (
-                  <button key={p} onClick={() => setMapProvider(p)}
-                    className={`px-3 py-2 text-xs transition-colors ${mapProvider===p ? "bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`}>
-                    {p === "google" ? "Google" : p === "cesium" ? "Cesium" : "Mapbox"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom info bar */}
-            <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
-              <div className="px-3 py-1.5 rounded-lg" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}>
-                <span className="text-xs text-gray-400">MAP: </span><span className="text-xs text-white uppercase font-mono">{mapProvider}</span>
-              </div>
-              <div className="px-3 py-1.5 rounded-lg" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}>
-                <span className="text-xs text-gray-400">LAT: </span><span className="text-xs text-blue-400 font-mono">25.0419</span>
-                <span className="text-xs text-gray-400 ml-2">LNG: </span><span className="text-xs text-blue-400 font-mono">121.5654</span>
-              </div>
-            </div>
-
-            {/* View controls */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1">
-              {[Icons.ZoomIn, Icons.ZoomOut, Icons.Locate, Icons.RotateCcw].map((Ic, i) => (
-                <button key={i} className="p-2 rounded-lg text-gray-300 hover:text-white transition-colors" style={{background:"rgba(30,41,59,0.8)", border:"1px solid rgba(71,85,105,0.4)"}}>
-                  <Ic size={14}/>
-                </button>
-              ))}
-            </div>
-
-            {showSearch && <GISSearch sites={SITES_DATA} onSelect={handleAssetClick} onClose={() => setShowSearch(false)}/>}
-            <ThreeScene selectedAsset={selectedAsset} onAssetClick={handleAssetClick} siteData={SITES_DATA[0]}/>
+        {d.model&&<div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">型號</div><span className="text-sm text-white">{d.model}</span></div>}
+        {(d.temp>0||d.power>0)&&<>
+          <div className="text-xs text-gray-500 uppercase tracking-wider pt-1">即時監控</div>
+          <div className="grid grid-cols-2 gap-2">
+            {d.temp>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Thermo size={14} className={d.temp>28?"text-yellow-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">溫度</div><div className={`text-sm font-bold font-mono ${d.temp>28?"text-yellow-400":"text-blue-400"}`}>{d.temp}°C</div></div></div>}
+            {d.power>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Zap size={14} className={d.power>90?"text-red-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">負載</div><div className={`text-sm font-bold font-mono ${d.power>90?"text-red-400":"text-blue-400"}`}>{d.power}%</div></div></div>}
           </div>
-
-          {/* Right Info Panel */}
-          {showInfo && selectedAsset && <AssetInfoPanel asset={selectedAsset} onClose={() => { setShowInfo(false); setSelectedAsset(null); }}/>}
-        </div>
-      );
-    };
-
-    // ============================================================
-    // Dashboard Module
-    // ============================================================
-    const DashboardModule = () => {
-      const kpiCards = [
-        { title:"管理據點", value:KPI.totalSites, unit:"個", IconC:Icons.Building2, color:"text-blue-500", bg:"bg-blue-50", change:0 },
-        { title:"資產總數", value:KPI.totalAssets.toLocaleString(), unit:"件", IconC:Icons.Database, color:"text-blue-400", bg:"bg-blue-50", change:12 },
-        { title:"活躍告警", value:KPI.activeAlerts, unit:"則", IconC:Icons.AlertTriangle, color:"text-yellow-500", bg:"bg-yellow-50", change:-2 },
-        { title:"巡檢完成率", value:KPI.patrolCompletion, unit:"%", IconC:Icons.ClipboardCheck, color:"text-green-500", bg:"bg-green-50", change:5.2 },
-        { title:"MTBF", value:KPI.mtbf.toLocaleString(), unit:"hr", IconC:Icons.Activity, color:"text-purple-500", bg:"bg-purple-50", change:120 },
-        { title:"MTTR", value:KPI.mttr, unit:"hr", IconC:Icons.Clock, color:"text-red-400", bg:"bg-red-50", change:-0.3 },
-        { title:"OEE", value:KPI.oee, unit:"%", IconC:Icons.Gauge, color:"text-green-400", bg:"bg-green-50", change:1.5 },
-        { title:"待處理工單", value:KPI.workOrdersOpen, unit:"件", IconC:Icons.Wrench, color:"text-yellow-500", bg:"bg-yellow-50", change:3 },
-      ];
-
-      return (
-        <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">系統總覽</h2>
-              <p className="text-sm text-gray-500 mt-0.5">2026年3月18日 · 即時監控數據</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><Icons.Download size={13}/> 匯出</button>
-              <button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><Icons.RefreshCw size={13}/> 更新</button>
-            </div>
+          <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
+            <div className="flex justify-between mb-1"><span className="text-xs text-gray-400">功率使用率</span><span className="text-xs text-white font-mono">{d.power}%</span></div>
+            <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(51,65,85,0.8)"}}><div className={`h-full rounded-full ${d.power>90?"bg-red-500":d.power>75?"bg-yellow-500":"bg-blue-500"}`} style={{width:`${d.power}%`}}/></div>
           </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {kpiCards.map((kpi, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${kpi.bg}`}><kpi.IconC size={16} className={kpi.color}/></div>
-                  {kpi.change !== 0 && (
-                    <span className={`text-xs flex items-center gap-0.5 ${kpi.change > 0 ? "text-green-600":"text-red-500"}`}>
-                      {kpi.change > 0 ? <Icons.ArrowUpRight size={12}/> : <Icons.ArrowDownRight size={12}/>}{Math.abs(kpi.change)}
-                    </span>
-                  )}
-                </div>
-                <div className="text-2xl font-bold text-gray-900">{kpi.value}<span className="text-sm font-normal text-gray-400 ml-1">{kpi.unit}</span></div>
-                <div className="text-xs text-gray-500 mt-1">{kpi.title}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">最新工單</h3>
-                <Badge variant="primary">{WORK_ORDERS.filter(w => w.status !== "completed").length} 進行中</Badge>
-              </div>
-              <div>
-                {WORK_ORDERS.slice(0, 5).map(wo => (
-                  <div key={wo.id} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
-                    <div className={`w-1 h-8 rounded-full flex-shrink-0 ${wo.priority==="urgent"?"bg-red-500":wo.priority==="high"?"bg-yellow-500":wo.priority==="normal"?"bg-blue-500":"bg-gray-300"}`}/>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-gray-800 font-medium truncate">{wo.title}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{wo.number} · {wo.asset}</div>
-                    </div>
-                    <Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>
-                      {wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}
-                    </Badge>
-                    <span className="text-xs text-gray-400 hidden sm:block">{wo.assignee}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100"><h3 className="text-sm font-semibold text-gray-900">據點狀態</h3></div>
-              <div className="p-4 space-y-3">
-                {SITES_DATA.map(site => (
-                  <div key={site.id} className="p-3 bg-gray-50 rounded-lg hover-lift cursor-pointer">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-800">{site.name}</span>
-                      <StatusDot status={site.alerts > 0 ? "warning":"active"}/>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{site.assets} 資產</span><span>{site.alerts} 告警</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-5 py-3 border-t border-gray-100">
-                <div className="text-sm font-semibold text-gray-900 mb-2">今日巡檢</div>
-                {PATROL_DATA.slice(0,3).map(p => (
-                  <div key={p.id} className="flex items-center justify-between py-1.5">
-                    <span className="text-xs text-gray-600">{p.name}</span>
-                    <Badge variant={p.status==="completed"?"success":p.status==="in-progress"?"info":"default"}>
-                      {p.status==="completed"?"完成":p.status==="in-progress"?"進行中":"排定"}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    // ============================================================
-    // Patrol Module
-    // ============================================================
-    const PatrolModule = () => {
-      const [scanning, setScanning] = useState(false);
-      const [scanResult, setScanResult] = useState(null);
-
-      const handleScan = () => {
-        setScanning(true);
-        setTimeout(() => { setScanning(false); setScanResult({ checkpoint:"CP-B1F-003", name:"Rack-C08 前方", time:new Date().toLocaleTimeString() }); }, 2000);
-      };
-
-      return (
-        <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-          <div className="flex items-center justify-between">
-            <div><h2 className="text-xl font-bold text-gray-900">巡邏檢查</h2><p className="text-sm text-gray-500 mt-0.5">管理巡檢排程與執行任務</p></div>
-            <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><Icons.Plus size={16}/> 新增排程</button>
-          </div>
-
-          <div className="rounded-xl p-6 text-white" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">QR Code 掃描巡檢</h3>
-                <p className="text-blue-200 text-sm">掃描檢查點QR碼以開始巡檢作業</p>
-                {scanResult && (
-                  <div className="mt-3 rounded-lg p-3" style={{background:"rgba(255,255,255,0.1)", backdropFilter:"blur(10px)"}}>
-                    <div className="flex items-center gap-2"><Icons.CheckCircle size={16} className="text-green-300"/><span className="text-sm">掃描成功: {scanResult.checkpoint} - {scanResult.name}</span></div>
-                    <span className="text-xs text-blue-200">{scanResult.time}</span>
-                  </div>
-                )}
-              </div>
-              <button onClick={handleScan} disabled={scanning}
-                className={`w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all flex-shrink-0 ${scanning ? "bg-white bg-opacity-30":"bg-white bg-opacity-20 hover:bg-opacity-30 cursor-pointer"}`}>
-                {scanning ? <Icons.RefreshCw size={28} className="spin"/> : <Icons.QrCode size={28}/>}
-                <span className="text-xs">{scanning ? "掃描中":"掃描"}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">今日巡檢排程</h3>
-              <div className="flex items-center gap-2">
-                <Badge variant="success">{PATROL_DATA.filter(p => p.status==="completed").length} 完成</Badge>
-                <Badge variant="info">{PATROL_DATA.filter(p => p.status==="in-progress").length} 進行中</Badge>
-              </div>
-            </div>
-            {PATROL_DATA.map(p => (
-              <div key={p.id} className="px-5 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status==="completed"?"bg-green-50 text-green-600":p.status==="in-progress"?"bg-blue-50 text-blue-600":"bg-gray-50 text-gray-400"}`}>
-                  {p.status==="completed" ? <Icons.CheckCircle size={18}/> : p.status==="in-progress" ? <Icons.Play size={18}/> : <Icons.Clock size={18}/>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-800">{p.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{p.route} · {p.patrol}</div>
-                </div>
-                <div className="text-right hidden sm:block">
-                  <div className="text-xs text-gray-400">{p.time}</div>
-                  <div className="text-xs font-medium text-gray-600 mt-0.5">{p.completed}/{p.checkpoints} 檢查點</div>
-                </div>
-                <div style={{width:80}}>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${p.status==="completed"?"bg-green-500":"bg-blue-500"}`} style={{width:`${(p.completed/p.checkpoints)*100}%`}}/>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    };
-
-    // ============================================================
-    // Maintenance Module
-    // ============================================================
-    const MaintenanceModule = () => {
-      const groups = { pending:WORK_ORDERS.filter(w => w.status==="pending"), "in-progress":WORK_ORDERS.filter(w => w.status==="in-progress"), completed:WORK_ORDERS.filter(w => w.status==="completed") };
-      const prioColor = { urgent:"border-red-500", high:"border-yellow-500", normal:"border-blue-500", low:"border-gray-300" };
-
-      return (
-        <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-          <div className="flex items-center justify-between">
-            <div><h2 className="text-xl font-bold text-gray-900">維護查修</h2><p className="text-sm text-gray-500 mt-0.5">工單管理與維修進度追蹤</p></div>
-            <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><Icons.Plus size={16}/> 新增工單</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { key:"pending", label:"待處理", color:"text-yellow-600", bg:"bg-yellow-50" },
-              { key:"in-progress", label:"處理中", color:"text-blue-600", bg:"bg-blue-50" },
-              { key:"completed", label:"已完成", color:"text-green-600", bg:"bg-green-50" },
-            ].map(col => (
-              <div key={col.key} className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold ${col.color}`}>{col.label}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${col.bg} ${col.color}`}>{groups[col.key]?.length||0}</span>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {groups[col.key]?.map(wo => (
-                    <div key={wo.id} className={`bg-white rounded-lg p-4 border-l-4 ${prioColor[wo.priority]} shadow-sm hover-lift cursor-pointer`}>
-                      <div className="text-sm font-medium text-gray-800 mb-1">{wo.title}</div>
-                      <div className="text-xs text-gray-500 mb-2">{wo.number}</div>
-                      <div className="flex items-center justify-between">
-                        <Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"default"}>
-                          {wo.priority==="urgent"?"緊急":wo.priority==="high"?"高":wo.priority==="normal"?"一般":"低"}
-                        </Badge>
-                        <span className="text-xs text-gray-400">{wo.assignee}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {(!groups[col.key] || groups[col.key].length === 0) && <div className="text-center py-6 text-gray-400 text-sm">暫無工單</div>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    };
-
-    // ============================================================
-    // Asset Module
-    // ============================================================
-    const AssetModule = () => {
-      const [view, setView] = useState("grid");
-      const [searchQ, setSearchQ] = useState("");
-
-      const allAssets = useMemo(() => {
-        const items = [];
-        SITES_DATA.forEach(s => s.floors?.forEach(f => f.zones?.forEach(z => z.assets?.forEach(a => items.push({...a, site:s.name, floor:f.name, zone:z.name})))));
-        return items;
-      }, []);
-
-      const filtered = searchQ ? allAssets.filter(a => a.name.toLowerCase().includes(searchQ.toLowerCase()) || a.type.toLowerCase().includes(searchQ.toLowerCase()) || (a.model||"").toLowerCase().includes(searchQ.toLowerCase())) : allAssets;
-
-      return (
-        <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div><h2 className="text-xl font-bold text-gray-900">資產管理</h2><p className="text-sm text-gray-500 mt-0.5">設備登記、出入庫與盤點管理</p></div>
-            <div className="flex items-center gap-2">
-              <button className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><Icons.ScanBarcode size={14}/> 掃描入庫</button>
-              <button className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><Icons.Plus size={14}/> 新增資產</button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label:"資產總數", value:allAssets.length, IconC:Icons.Database, color:"text-blue-500" },
-              { label:"正常運行", value:allAssets.filter(a => a.status==="active").length, IconC:Icons.CheckCircle, color:"text-green-500" },
-              { label:"維護中", value:allAssets.filter(a => a.status==="maintenance").length, IconC:Icons.Wrench, color:"text-yellow-500" },
-              { label:"異常", value:allAssets.filter(a => a.status==="warning").length, IconC:Icons.AlertTriangle, color:"text-red-500" },
-            ].map((s, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-                <s.IconC size={20} className={s.color}/><div><div className="text-xl font-bold text-gray-900">{s.value}</div><div className="text-xs text-gray-500">{s.label}</div></div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Icons.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"/>
-              <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="搜尋資產名稱、類型、型號..."
-                className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"/>
-            </div>
-            <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <button onClick={() => setView("grid")} className={`p-2.5 ${view==="grid"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><Icons.Grid size={16}/></button>
-              <button onClick={() => setView("list")} className={`p-2.5 ${view==="list"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><Icons.List size={16}/></button>
-            </div>
-          </div>
-
-          {view === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(a => (
-                <div key={a.id} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg ${a.status==="active"?"bg-green-50":a.status==="warning"?"bg-yellow-50":"bg-purple-50"}`}>
-                        <Icons.Server size={16} className={a.status==="active"?"text-green-500":a.status==="warning"?"text-yellow-500":"text-purple-500"}/>
-                      </div>
-                      <div><div className="text-sm font-semibold text-gray-800">{a.name}</div><div className="text-xs text-gray-400">{a.type}</div></div>
-                    </div>
-                    <StatusDot status={a.status}/>
-                  </div>
-                  {a.model && <div className="text-xs text-gray-500 mb-2">{a.model}</div>}
-                  <div className="flex items-center justify-between text-xs text-gray-400"><span>{a.site}</span><span>{a.zone}</span></div>
-                  {a.temp > 0 && <div className="mt-3 flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1"><Icons.Thermometer size={12} className="text-blue-500"/>{a.temp}°C</span>
-                    <span className="flex items-center gap-1"><Icons.Zap size={12} className="text-blue-500"/>{a.power}%</span>
-                  </div>}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 text-xs text-gray-500"><tr><th className="px-4 py-3 text-left">名稱</th><th className="px-4 py-3 text-left hidden md:table-cell">類型</th><th className="px-4 py-3 text-left hidden lg:table-cell">型號</th><th className="px-4 py-3 text-left hidden sm:table-cell">位置</th><th className="px-4 py-3 text-left">狀態</th></tr></thead>
-                <tbody>
-                  {filtered.map(a => (
-                    <tr key={a.id} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">{a.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{a.type}</td>
-                      <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{a.model}</td>
-                      <td className="px-4 py-3 text-xs text-gray-400 hidden sm:table-cell">{a.zone}</td>
-                      <td className="px-4 py-3"><Badge variant={a.status==="active"?"success":a.status==="warning"?"warning":"info"}>{a.status}</Badge></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    // ============================================================
-    // Reports Module
-    // ============================================================
-    const ReportsModule = () => (
-      <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-        <div><h2 className="text-xl font-bold text-gray-900">報表分析</h2><p className="text-sm text-gray-500 mt-0.5">資產盤點、績效分析與報表輸出</p></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            { title:"資產盤點報告", desc:"最近盤點準確率 98.7%", IconC:Icons.ClipboardCheck, value:"98.7%", color:"text-green-500" },
-            { title:"維護成本分析", desc:"本月維護支出 NT$1,240,000", IconC:Icons.TrendingUp, value:"NT$1.24M", color:"text-blue-500" },
-            { title:"能源效率報告", desc:"PUE值持續優化中", IconC:Icons.Zap, value:"1.42", color:"text-yellow-500" },
-            { title:"設備可靠性", desc:"MTBF / MTTR 趨勢分析", IconC:Icons.Activity, value:"99.1%", color:"text-purple-500" },
-            { title:"巡檢績效", desc:"本月巡檢完成率統計", IconC:Icons.Target, value:"87.5%", color:"text-blue-400" },
-            { title:"客戶滿意度", desc:"服務評分 4.6 / 5.0", IconC:Icons.Star, value:"4.6", color:"text-red-400" },
-          ].map((r, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover-lift cursor-pointer">
-              <div className="flex items-center justify-between mb-3"><r.IconC size={20} className={r.color}/><span className={`text-xl font-bold ${r.color}`}>{r.value}</span></div>
-              <div className="text-sm font-semibold text-gray-800">{r.title}</div>
-              <div className="text-xs text-gray-500 mt-1">{r.desc}</div>
-              <button className="mt-3 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">查看詳情 <Icons.ArrowUpRight size={12}/></button>
-            </div>
-          ))}
+        </>}
+        {d.subItems&&<div><div className="text-xs text-gray-500 uppercase tracking-wider mb-2">子設備</div>{d.subItems.map(sub=>(
+          <div key={sub.id} className="rounded-lg p-2.5 flex items-center gap-2 mb-1.5" style={{background:"rgba(30,41,59,0.6)"}}><Dot s={sub.status}/><div className="flex-1 min-w-0"><div className="text-xs text-white truncate">{sub.name}</div><div className="text-xs text-gray-500">{sub.type}</div></div></div>
+        ))}</div>}
+        <div className="flex gap-2 pt-2">
+          <button className="flex-1 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">建立工單</button>
+          <button className="flex-1 py-2 text-gray-200 text-xs rounded-lg hover:bg-gray-700" style={{background:"rgba(51,65,85,0.6)"}}>維護記錄</button>
         </div>
       </div>
-    );
+    </div>
+  );
+};
 
-    // ============================================================
-    // Main App
-    // ============================================================
-    const MODULES = [
-      { id:"dashboard", label:"系統總覽", IconC:Icons.Home },
-      { id:"gis", label:"3D GIS", IconC:Icons.Globe },
-      { id:"assets", label:"資產管理", IconC:Icons.Database },
-      { id:"patrol", label:"巡邏檢查", IconC:Icons.ClipboardCheck },
-      { id:"maintenance", label:"維護查修", IconC:Icons.Wrench },
-      { id:"reports", label:"報表分析", IconC:Icons.BarChart3 },
-    ];
+// ============ GIS Module ============
+const GISModule=()=>{
+  const[sel,setSel]=useState(null);
+  const[showSearch,setShowSearch]=useState(false);
+  const[layerSearch,setLayerSearch]=useState("");
+  const[mapProv,setMapProv]=useState("3d");
+  const[showPanel,setShowPanel]=useState(true);
+  const[showInfo,setShowInfo]=useState(false);
+  const[labels,setLabels]=useState([]);
 
-    const App = () => {
-      const [currentModule, setCurrentModule] = useState("dashboard");
-      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-      const isGIS = currentModule === "gis";
+  const handleClick=(d)=>{setSel(d);setShowInfo(true);};
 
-      const renderModule = () => {
-        switch(currentModule) {
-          case "dashboard": return <DashboardModule/>;
-          case "gis": return <GISModule/>;
-          case "assets": return <AssetModule/>;
-          case "patrol": return <PatrolModule/>;
-          case "maintenance": return <MaintenanceModule/>;
-          case "reports": return <ReportsModule/>;
-          default: return <DashboardModule/>;
-        }
-      };
-
-      return (
-        <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-          {/* Header */}
-          <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between flex-shrink-0 z-30" style={{height:56}}>
-            <div className="flex items-center gap-3">
-              <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg" onClick={() => setMobileMenuOpen(true)}><Icons.Menu size={20}/></button>
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}>
-                  <Icons.Building2 size={16} className="text-white"/>
-                </div>
-                <div className="hidden sm:block">
-                  <span className="text-sm font-bold text-gray-900">PFMS</span>
-                  <span className="text-xs text-gray-400 ml-1.5 hidden md:inline">物業與設施管理系統</span>
-                </div>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1">
-              {MODULES.map(m => (
-                <button key={m.id} onClick={() => setCurrentModule(m.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${currentModule===m.id ? "bg-blue-50 text-blue-700 font-medium":"text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
-                  <m.IconC size={15}/><span>{m.label}</span>
-                </button>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-2">
-              <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                <Icons.Bell size={18}/>
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold flex items-center justify-center rounded-full" style={{fontSize:9}}>4</span>
-              </button>
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">SJ</div>
-            </div>
-          </header>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="fixed inset-0 z-50" style={{display:"flex"}}>
-              <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setMobileMenuOpen(false)}/>
-              <div className="relative bg-white shadow-xl slide-in-left" style={{width:280}}>
-                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                  <span className="text-sm font-bold text-gray-900">PFMS</span>
-                  <button onClick={() => setMobileMenuOpen(false)} className="text-gray-400"><Icons.X size={20}/></button>
-                </div>
-                <nav className="p-3 space-y-1">
-                  {MODULES.map(m => (
-                    <button key={m.id} onClick={() => { setCurrentModule(m.id); setMobileMenuOpen(false); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${currentModule===m.id ? "bg-blue-50 text-blue-700 font-medium":"text-gray-600 hover:bg-gray-50"}`}>
-                      <m.IconC size={18}/><span>{m.label}</span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
-            </div>
-          )}
-
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto" style={{background: isGIS ? "#0a1628" : undefined}}>
-            {renderModule()}
-          </main>
+  return(
+    <div className="flex" style={{height:"100%",background:"#0a1628"}}>
+      {showPanel&&<div className="slide-in-left flex flex-col flex-shrink-0" style={{width:280,background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",borderRight:"1px solid rgba(71,85,105,0.4)"}}>
+        <div className="p-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
+          <div className="flex items-center justify-between mb-3"><h3 className="text-white text-sm font-semibold flex items-center gap-2"><I.Layers size={14} className="text-blue-400"/> 圖層管理</h3><button onClick={()=>setShowPanel(false)} className="text-gray-400 hover:text-white"><I.ChevLeft size={16}/></button></div>
+          <div className="relative"><I.Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500"/><input value={layerSearch} onChange={e=>setLayerSearch(e.target.value)} placeholder="搜尋圖層..." className="w-full rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none" style={{background:"rgba(30,41,59,0.6)",border:"1px solid rgba(71,85,105,0.4)"}}/></div>
         </div>
-      );
-    };
+        <div className="flex-1 overflow-y-auto p-2"><LayerTree data={SITES} selectedId={sel?.id} onSelect={handleClick} sq={layerSearch}/></div>
+        <div className="p-3" style={{borderTop:"1px solid rgba(71,85,105,0.3)"}}><button className="w-full py-2 text-blue-400 text-xs rounded-lg flex items-center justify-center gap-2" style={{background:"rgba(37,99,235,0.1)",border:"1px solid rgba(37,99,235,0.3)"}}><I.Plus size={14}/> 新增管理據點</button></div>
+      </div>}
 
-    ReactDOM.render(<App/>, document.getElementById("root"));
-    </script>
+      <div className="flex-1 relative overflow-hidden">
+        {/* Controls */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          {!showPanel&&<button onClick={()=>setShowPanel(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Layers size={16}/></button>}
+          <button onClick={()=>setShowSearch(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Search size={16}/></button>
+          <div className="flex rounded-lg overflow-hidden" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
+            {[{k:"3d",l:"3D View"},{k:"cesium",l:"Cesium"},{k:"mapbox",l:"Mapbox"}].map(p=>(
+              <button key={p.k} onClick={()=>setMapProv(p.k)} className={`px-3 py-2 text-xs transition-colors ${mapProv===p.k?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`}>{p.l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Interaction hint */}
+        {mapProv==="3d"&&<div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 flex-wrap">
+          <div className="px-3 py-1.5 rounded-lg text-xs" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
+            <span className="text-gray-400">拖曳</span><span className="text-white ml-1">旋轉</span>
+            <span className="text-gray-500 mx-2">|</span>
+            <span className="text-gray-400">右鍵拖曳</span><span className="text-white ml-1">平移</span>
+            <span className="text-gray-500 mx-2">|</span>
+            <span className="text-gray-400">滾輪</span><span className="text-white ml-1">縮放</span>
+            <span className="text-gray-500 mx-2">|</span>
+            <span className="text-gray-400">雙擊</span><span className="text-white ml-1">聚焦</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-lg" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
+            <span className="text-xs text-gray-400">MAP: </span><span className="text-xs text-white uppercase font-mono">{mapProv}</span>
+          </div>
+        </div>}
+
+        {/* View controls (3D mode) */}
+        {mapProv==="3d"&&<div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1">
+          {[I.ZoomIn,I.ZoomOut,I.Locate,I.RotateCcw].map((Ico,i)=>(
+            <button key={i} className="p-2 rounded-lg text-gray-300 hover:text-white transition-colors" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><Ico size={14}/></button>
+          ))}
+        </div>}
+
+        {showSearch&&<GISSearch sites={SITES} onSelect={handleClick} onClose={()=>setShowSearch(false)}/>}
+
+        {/* Map Renderers */}
+        {mapProv==="3d"&&<>
+          <ThreeScene selectedAsset={sel} onAssetClick={handleClick} siteData={SITES[0]} onLabelPositions={setLabels}/>
+          {/* Floating labels */}
+          {labels.map(lb=>(
+            <div key={lb.id} className="label-3d" onClick={()=>handleClick(lb.data)}
+              style={{left:lb.x,top:lb.y,transform:"translate(-50%,-100%)",
+                background:lb.status==="warning"?"rgba(245,158,11,0.85)":lb.status==="maintenance"?"rgba(99,102,241,0.85)":"rgba(16,185,129,0.75)",
+                color:"#fff",border:"1px solid rgba(255,255,255,0.2)"}}>
+              {lb.name}
+            </div>
+          ))}
+        </>}
+        {mapProv==="cesium"&&<CesiumMap sites={SITES}/>}
+        {mapProv==="mapbox"&&<MapboxMap sites={SITES}/>}
+      </div>
+
+      {showInfo&&sel&&<AssetPanel asset={sel} onClose={()=>{setShowInfo(false);setSel(null);}}/>}
+    </div>
+  );
+};
+
+// ============ Dashboard with Drill-Down ============
+const DashboardModule=()=>{
+  const[detail,setDetail]=useState(null);// {type:'kpi'|'wo'|'site', data:...}
+
+  const kpiCards=[
+    {title:"管理據點",value:KPI.totalSites,unit:"個",Ic:I.Building,color:"text-blue-500",bg:"bg-blue-50",change:0,detailType:"sites"},
+    {title:"資產總數",value:KPI.totalAssets.toLocaleString(),unit:"件",Ic:I.Database,color:"text-blue-400",bg:"bg-blue-50",change:12,detailType:"assets"},
+    {title:"活躍告警",value:KPI.activeAlerts,unit:"則",Ic:I.Alert,color:"text-yellow-500",bg:"bg-yellow-50",change:-2,detailType:"alerts"},
+    {title:"巡檢完成率",value:KPI.patrolCompletion,unit:"%",Ic:I.Clipboard,color:"text-green-500",bg:"bg-green-50",change:5.2,detailType:"patrol"},
+    {title:"MTBF",value:KPI.mtbf.toLocaleString(),unit:"hr",Ic:I.Activity,color:"text-purple-500",bg:"bg-purple-50",change:120,detailType:"mtbf"},
+    {title:"MTTR",value:KPI.mttr,unit:"hr",Ic:I.Clock,color:"text-red-400",bg:"bg-red-50",change:-0.3,detailType:"mttr"},
+    {title:"OEE",value:KPI.oee,unit:"%",Ic:I.Gauge,color:"text-green-400",bg:"bg-green-50",change:1.5,detailType:"oee"},
+    {title:"待處理工單",value:KPI.workOrdersOpen,unit:"件",Ic:I.Wrench,color:"text-yellow-500",bg:"bg-yellow-50",change:3,detailType:"wo_open"},
+  ];
+
+  const renderDetail=()=>{
+    if(!detail)return null;
+    if(detail.type==="wo"){
+      const wo=detail.data;
+      return(<DetailModal title={wo.title} onClose={()=>setDetail(null)}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{wo.number}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"primary"}>{wo.priority==="urgent"?"緊急":wo.priority==="high"?"高":wo.priority==="normal"?"一般":"低"}</Badge></div>
+            <div><div className="text-xs text-gray-500 mb-1">指派人員</div><div className="text-sm">{wo.assignee}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">狀態</div><Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge></div>
+            <div><div className="text-xs text-gray-500 mb-1">建立時間</div><div className="text-sm">{wo.created}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{wo.due}</div></div>
+          </div>
+          <div><div className="text-xs text-gray-500 mb-1">關聯資產</div><div className="text-sm font-medium">{wo.asset}</div></div>
+          <div><div className="text-xs text-gray-500 mb-1">問題描述</div><div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{wo.desc}</div></div>
+          <div>
+            <div className="text-xs text-gray-500 mb-2">處理歷程</div>
+            <div className="space-y-2">
+              {wo.history.map((h,i)=>(
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 text-xs text-gray-400 pt-0.5 text-right flex-shrink-0">{h.time}</div>
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/>
+                  <div className="text-sm text-gray-700">{h.action}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DetailModal>);
+    }
+    if(detail.type==="site"){
+      const site=detail.data;
+      return(<DetailModal title={site.name} onClose={()=>setDetail(null)}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div><div className="text-xs text-gray-500 mb-1">類型</div><div className="text-sm">{site.type==="datacenter"?"資料中心":site.type==="factory"?"工廠":"倉儲"}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">狀態</div><div className="flex items-center gap-2"><Dot s={site.alerts>0?"warning":"active"}/><span className="text-sm">{site.alerts>0?"有告警":"正常"}</span></div></div>
+          </div>
+          <div><div className="text-xs text-gray-500 mb-1">地址</div><div className="text-sm">{site.address}</div></div>
+          <div><div className="text-xs text-gray-500 mb-1">座標</div><div className="text-sm font-mono">{site.lat}, {site.lng}</div></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-blue-50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-700">{site.assets}</div><div className="text-xs text-blue-500">資產數</div></div>
+            <div className={`rounded-lg p-3 text-center ${site.alerts>0?"bg-yellow-50":"bg-green-50"}`}><div className={`text-2xl font-bold ${site.alerts>0?"text-yellow-700":"text-green-700"}`}>{site.alerts}</div><div className={`text-xs ${site.alerts>0?"text-yellow-500":"text-green-500"}`}>告警</div></div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 mb-2">樓層結構</div>
+            {site.floors?.map(f=>(
+              <div key={f.id} className="bg-gray-50 rounded-lg p-3 mb-2">
+                <div className="text-sm font-medium text-gray-800 mb-1">{f.name}</div>
+                <div className="text-xs text-gray-500">{f.zones?.length || 0} 區域 · {f.zones?.reduce((acc,z)=>acc+(z.assets?.length||0),0)||0} 設備</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DetailModal>);
+    }
+    if(detail.type==="kpi"){
+      const kpi=detail.data;
+      return(<DetailModal title={`${kpi.title} - 詳細資訊`} onClose={()=>setDetail(null)}>
+        <div className="space-y-4">
+          <div className="text-center py-6 bg-gray-50 rounded-xl">
+            <div className="text-4xl font-bold text-gray-900">{kpi.value}<span className="text-lg text-gray-400 ml-1">{kpi.unit}</span></div>
+            <div className="text-sm text-gray-500 mt-2">{kpi.title}</div>
+            {kpi.change!==0&&<div className={`mt-2 text-sm ${kpi.change>0?"text-green-600":"text-red-500"}`}>{kpi.change>0?"↑":"↓"} {Math.abs(kpi.change)} 較上期</div>}
+          </div>
+          <div className="text-xs text-gray-500 mb-2">趨勢數據 (近 7 日)</div>
+          <div className="flex items-end gap-1 h-24">
+            {[65,72,68,80,75,85,kpi.detailType==="patrolCompletion"?87.5:90].map((v,i)=>(
+              <div key={i} className="flex-1 bg-blue-100 rounded-t" style={{height:`${v}%`}}>
+                <div className="bg-blue-500 rounded-t h-full" style={{opacity:i===6?1:0.6}}/>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-gray-400"><span>03/12</span><span>03/18</span></div>
+          {kpi.detailType==="sites"&&<div><div className="text-xs text-gray-500 mb-2">各據點概況</div>{SITES.map(s=>(<div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50"><span className="text-sm">{s.name}</span><span className="text-sm text-gray-500">{s.assets} 資產</span></div>))}</div>}
+        </div>
+      </DetailModal>);
+    }
+    return null;
+  };
+
+  return(
+    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div><h2 className="text-xl font-bold text-gray-900">系統總覽</h2><p className="text-sm text-gray-500 mt-0.5">2026年3月18日 · 即時監控數據</p></div>
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><I.Download size={13}/> 匯出</button>
+          <button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><I.Refresh size={13}/> 更新</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {kpiCards.map((kpi,i)=>(
+          <div key={i} onClick={()=>setDetail({type:"kpi",data:kpi})} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
+            <div className="flex items-center justify-between mb-3"><div className={`p-2 rounded-lg ${kpi.bg}`}><kpi.Ic size={16} className={kpi.color}/></div>
+              {kpi.change!==0&&<span className={`text-xs flex items-center gap-0.5 ${kpi.change>0?"text-green-600":"text-red-500"}`}>{kpi.change>0?<I.ArrowUp size={12}/>:<I.ArrowDown size={12}/>}{Math.abs(kpi.change)}</span>}
+            </div>
+            <div className="text-2xl font-bold text-gray-900">{kpi.value}<span className="text-sm font-normal text-gray-400 ml-1">{kpi.unit}</span></div>
+            <div className="text-xs text-gray-500 mt-1">{kpi.title}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">最新工單</h3><Badge variant="primary">{WO.filter(w=>w.status!=="completed").length} 進行中</Badge>
+          </div>
+          {WO.slice(0,5).map(wo=>(
+            <div key={wo.id} onClick={()=>setDetail({type:"wo",data:wo})} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
+              <div className={`w-1 h-8 rounded-full flex-shrink-0 ${wo.priority==="urgent"?"bg-red-500":wo.priority==="high"?"bg-yellow-500":wo.priority==="normal"?"bg-blue-500":"bg-gray-300"}`}/>
+              <div className="flex-1 min-w-0"><div className="text-sm text-gray-800 font-medium truncate">{wo.title}</div><div className="text-xs text-gray-500 mt-0.5">{wo.number} · {wo.asset}</div></div>
+              <Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge>
+              <span className="text-xs text-gray-400 hidden sm:block">{wo.assignee}</span>
+              <I.ChevRight size={14} className="text-gray-300"/>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100"><h3 className="text-sm font-semibold text-gray-900">據點狀態</h3></div>
+          <div className="p-4 space-y-3">
+            {SITES.map(site=>(
+              <div key={site.id} onClick={()=>setDetail({type:"site",data:site})} className="p-3 bg-gray-50 rounded-lg hover-lift cursor-pointer">
+                <div className="flex items-center justify-between mb-1"><span className="text-sm font-medium text-gray-800">{site.name}</span><I.ChevRight size={14} className="text-gray-300"/></div>
+                <div className="flex items-center justify-between text-xs text-gray-500"><span>{site.assets} 資產</span><div className="flex items-center gap-1"><Dot s={site.alerts>0?"warning":"active"}/><span>{site.alerts} 告警</span></div></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {renderDetail()}
+    </div>
+  );
+};
+
+// ============ Patrol Module ============
+const PatrolModule=()=>{
+  const[scanning,setScanning]=useState(false);
+  const[scanResult,setScanResult]=useState(null);
+  const[detail,setDetail]=useState(null);
+
+  return(
+    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
+      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">巡邏檢查</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><I.Plus size={16}/> 新增排程</button></div>
+      <div className="rounded-xl p-6 text-white" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}>
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          <div className="flex-1"><h3 className="text-lg font-semibold mb-1">QR Code 掃描巡檢</h3><p className="text-blue-200 text-sm">掃描檢查點QR碼以開始巡檢作業</p>
+            {scanResult&&<div className="mt-3 rounded-lg p-3" style={{background:"rgba(255,255,255,0.1)"}}><div className="flex items-center gap-2"><I.Check size={16} className="text-green-300"/><span className="text-sm">掃描成功: {scanResult}</span></div></div>}
+          </div>
+          <button onClick={()=>{setScanning(true);setTimeout(()=>{setScanning(false);setScanResult("CP-B1F-003 Rack-C08");},2000);}} disabled={scanning}
+            className={`w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1 flex-shrink-0 ${scanning?"bg-white bg-opacity-30":"bg-white bg-opacity-20 hover:bg-opacity-30 cursor-pointer"}`}>
+            {scanning?<I.Refresh size={28} className="spin"/>:<I.QrCode size={28}/>}<span className="text-xs">{scanning?"掃描中":"掃描"}</span>
+          </button>
+        </div>
+      </div>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-900">今日巡檢排程</h3></div>
+        {PATROLS.map(p=>(
+          <div key={p.id} onClick={()=>setDetail(p)} className="px-5 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status==="completed"?"bg-green-50 text-green-600":p.status==="in-progress"?"bg-blue-50 text-blue-600":"bg-gray-50 text-gray-400"}`}>
+              {p.status==="completed"?<I.Check size={18}/>:p.status==="in-progress"?<I.Play size={18}/>:<I.Clock size={18}/>}
+            </div>
+            <div className="flex-1 min-w-0"><div className="text-sm font-medium text-gray-800">{p.name}</div><div className="text-xs text-gray-500 mt-0.5">{p.route} · {p.patrol}</div></div>
+            <div className="text-right hidden sm:block"><div className="text-xs text-gray-400">{p.time}</div><div className="text-xs font-medium text-gray-600 mt-0.5">{p.completed}/{p.checkpoints}</div></div>
+            <div style={{width:80}}><div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p.status==="completed"?"bg-green-500":"bg-blue-500"}`} style={{width:`${(p.completed/p.checkpoints)*100}%`}}/></div></div>
+            <I.ChevRight size={14} className="text-gray-300"/>
+          </div>
+        ))}
+      </div>
+      {detail&&<DetailModal title={detail.name} onClose={()=>setDetail(null)}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div><div className="text-xs text-gray-500 mb-1">路線</div><div className="text-sm">{detail.route}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">巡檢人員</div><div className="text-sm">{detail.patrol}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">時段</div><div className="text-sm">{detail.time}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">進度</div><div className="text-sm font-bold">{detail.completed}/{detail.checkpoints} 檢查點</div></div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-3"><div className="flex justify-between mb-1"><span className="text-xs text-gray-500">完成進度</span><span className="text-xs font-bold">{Math.round((detail.completed/detail.checkpoints)*100)}%</span></div>
+            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${detail.status==="completed"?"bg-green-500":"bg-blue-500"}`} style={{width:`${(detail.completed/detail.checkpoints)*100}%`}}/></div>
+          </div>
+          {detail.items.length>0&&<div><div className="text-xs text-gray-500 mb-2">檢查項目結果</div>{detail.items.map((it,i)=>(
+            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50">
+              <span className="text-sm text-gray-700">{it.name}</span>
+              <div className="flex items-center gap-2"><span className="text-sm font-mono text-gray-600">{it.val}</span><Badge variant={it.result==="正常"?"success":"warning"}>{it.result}</Badge></div>
+            </div>
+          ))}</div>}
+        </div>
+      </DetailModal>}
+    </div>
+  );
+};
+
+// ============ Maintenance Module ============
+const MaintenanceModule=()=>{
+  const[detail,setDetail]=useState(null);
+  const groups={pending:WO.filter(w=>w.status==="pending"),"in-progress":WO.filter(w=>w.status==="in-progress"),completed:WO.filter(w=>w.status==="completed")};
+  const prioC={urgent:"border-red-500",high:"border-yellow-500",normal:"border-blue-500",low:"border-gray-300"};
+  return(
+    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
+      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">維護查修</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><I.Plus size={16}/> 新增工單</button></div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[{key:"pending",label:"待處理",color:"text-yellow-600",bg:"bg-yellow-50"},{key:"in-progress",label:"處理中",color:"text-blue-600",bg:"bg-blue-50"},{key:"completed",label:"已完成",color:"text-green-600",bg:"bg-green-50"}].map(col=>(
+          <div key={col.key} className="bg-gray-50 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-4"><span className={`text-sm font-semibold ${col.color}`}>{col.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${col.bg} ${col.color}`}>{groups[col.key]?.length||0}</span></div>
+            <div className="space-y-3">{groups[col.key]?.map(wo=>(
+              <div key={wo.id} onClick={()=>setDetail(wo)} className={`bg-white rounded-lg p-4 border-l-4 ${prioC[wo.priority]} shadow-sm hover-lift cursor-pointer`}>
+                <div className="text-sm font-medium text-gray-800 mb-1">{wo.title}</div><div className="text-xs text-gray-500 mb-2">{wo.number}</div>
+                <div className="flex items-center justify-between"><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"default"}>{wo.priority==="urgent"?"緊急":wo.priority==="high"?"高":"一般"}</Badge><span className="text-xs text-gray-400">{wo.assignee}</span></div>
+              </div>
+            ))}{(!groups[col.key]||groups[col.key].length===0)&&<div className="text-center py-6 text-gray-400 text-sm">暫無工單</div>}</div>
+          </div>
+        ))}
+      </div>
+      {detail&&<DetailModal title={detail.title} onClose={()=>setDetail(null)}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{detail.number}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={detail.priority==="urgent"?"danger":detail.priority==="high"?"warning":"primary"}>{detail.priority}</Badge></div>
+            <div><div className="text-xs text-gray-500 mb-1">指派人員</div><div className="text-sm">{detail.assignee}</div></div>
+            <div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{detail.due}</div></div>
+          </div>
+          <div><div className="text-xs text-gray-500 mb-1">問題描述</div><div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.desc}</div></div>
+          <div><div className="text-xs text-gray-500 mb-2">處理歷程</div>{detail.history.map((h,i)=>(<div key={i} className="flex items-start gap-3 mb-1.5"><div className="w-8 text-xs text-gray-400 pt-0.5 text-right flex-shrink-0">{h.time}</div><div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/><div className="text-sm text-gray-700">{h.action}</div></div>))}</div>
+        </div>
+      </DetailModal>}
+    </div>
+  );
+};
+
+// ============ Asset Module ============
+const AssetModule=()=>{
+  const[view,setView]=useState("grid");const[sq,setSq]=useState("");
+  const allA=useMemo(()=>{const items=[];SITES.forEach(s=>s.floors?.forEach(f=>f.zones?.forEach(z=>z.assets?.forEach(a=>items.push({...a,site:s.name,floor:f.name,zone:z.name})))));return items;},[]);
+  const filtered=sq?allA.filter(a=>a.name.toLowerCase().includes(sq.toLowerCase())||a.type.toLowerCase().includes(sq.toLowerCase())||(a.model||"").toLowerCase().includes(sq.toLowerCase())):allA;
+  return(
+    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><h2 className="text-xl font-bold text-gray-900">資產管理</h2></div>
+        <div className="flex items-center gap-2"><button className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><I.Scan size={14}/> 掃描入庫</button><button className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><I.Plus size={14}/> 新增資產</button></div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{label:"資產總數",value:allA.length,Ic:I.Database,color:"text-blue-500"},{label:"正常運行",value:allA.filter(a=>a.status==="active").length,Ic:I.Check,color:"text-green-500"},{label:"維護中",value:allA.filter(a=>a.status==="maintenance").length,Ic:I.Wrench,color:"text-yellow-500"},{label:"異常",value:allA.filter(a=>a.status==="warning").length,Ic:I.Alert,color:"text-red-500"}].map((s,i)=>(<div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"><s.Ic size={20} className={s.color}/><div><div className="text-xl font-bold text-gray-900">{s.value}</div><div className="text-xs text-gray-500">{s.label}</div></div></div>))}</div>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 relative"><I.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"/><input value={sq} onChange={e=>setSq(e.target.value)} placeholder="搜尋資產名稱、類型、型號..." className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"/></div>
+        <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden"><button onClick={()=>setView("grid")} className={`p-2.5 ${view==="grid"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><I.Grid size={16}/></button><button onClick={()=>setView("list")} className={`p-2.5 ${view==="list"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><I.List size={16}/></button></div>
+      </div>
+      {view==="grid"?<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{filtered.map(a=>(<div key={a.id} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
+        <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><div className={`p-2 rounded-lg ${a.status==="active"?"bg-green-50":a.status==="warning"?"bg-yellow-50":"bg-purple-50"}`}><I.Server size={16} className={a.status==="active"?"text-green-500":a.status==="warning"?"text-yellow-500":"text-purple-500"}/></div><div><div className="text-sm font-semibold text-gray-800">{a.name}</div><div className="text-xs text-gray-400">{a.type}</div></div></div><Dot s={a.status}/></div>
+        {a.model&&<div className="text-xs text-gray-500 mb-2">{a.model}</div>}<div className="flex items-center justify-between text-xs text-gray-400"><span>{a.site}</span><span>{a.zone}</span></div>
+        {a.temp>0&&<div className="mt-3 flex items-center gap-4 text-xs"><span className="flex items-center gap-1"><I.Thermo size={12} className="text-blue-500"/>{a.temp}°C</span><span className="flex items-center gap-1"><I.Zap size={12} className="text-blue-500"/>{a.power}%</span></div>}
+      </div>))}</div>:
+      <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto"><table className="w-full"><thead className="bg-gray-50 text-xs text-gray-500"><tr><th className="px-4 py-3 text-left">名稱</th><th className="px-4 py-3 text-left hidden md:table-cell">類型</th><th className="px-4 py-3 text-left hidden lg:table-cell">型號</th><th className="px-4 py-3 text-left hidden sm:table-cell">位置</th><th className="px-4 py-3 text-left">狀態</th></tr></thead><tbody>{filtered.map(a=>(<tr key={a.id} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50"><td className="px-4 py-3 text-sm font-medium text-gray-800">{a.name}</td><td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{a.type}</td><td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{a.model}</td><td className="px-4 py-3 text-xs text-gray-400 hidden sm:table-cell">{a.zone}</td><td className="px-4 py-3"><Badge variant={a.status==="active"?"success":a.status==="warning"?"warning":"info"}>{a.status}</Badge></td></tr>))}</tbody></table></div>}
+    </div>
+  );
+};
+
+// ============ Reports Module ============
+const ReportsModule=()=>(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div><h2 className="text-xl font-bold text-gray-900">報表分析</h2></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[{title:"資產盤點報告",desc:"最近盤點準確率 98.7%",Ic:I.Clipboard,value:"98.7%",color:"text-green-500"},{title:"維護成本分析",desc:"本月維護支出 NT$1,240,000",Ic:I.TrendUp,value:"NT$1.24M",color:"text-blue-500"},{title:"能源效率報告",desc:"PUE值持續優化中",Ic:I.Zap,value:"1.42",color:"text-yellow-500"},{title:"設備可靠性",desc:"MTBF / MTTR 趨勢分析",Ic:I.Activity,value:"99.1%",color:"text-purple-500"},{title:"巡檢績效",desc:"本月巡檢完成率統計",Ic:I.Target,value:"87.5%",color:"text-blue-400"},{title:"客戶滿意度",desc:"服務評分 4.6 / 5.0",Ic:I.Star,value:"4.6",color:"text-red-400"}].map((r,i)=>(<div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover-lift cursor-pointer"><div className="flex items-center justify-between mb-3"><r.Ic size={20} className={r.color}/><span className={`text-xl font-bold ${r.color}`}>{r.value}</span></div><div className="text-sm font-semibold text-gray-800">{r.title}</div><div className="text-xs text-gray-500 mt-1">{r.desc}</div><button className="mt-3 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">查看詳情 <I.ArrowUp size={12}/></button></div>))}</div></div>);
+
+// ============ Main App ============
+const MODS=[{id:"dashboard",label:"系統總覽",Ic:I.Home},{id:"gis",label:"3D GIS",Ic:I.Globe},{id:"assets",label:"資產管理",Ic:I.Database},{id:"patrol",label:"巡邏檢查",Ic:I.Clipboard},{id:"maintenance",label:"維護查修",Ic:I.Wrench},{id:"reports",label:"報表分析",Ic:I.BarChart}];
+
+const App=()=>{
+  const[mod,setMod]=useState("dashboard");
+  const[mobileMenu,setMobileMenu]=useState(false);
+  const isGIS=mod==="gis";
+
+  const renderMod=()=>{switch(mod){case"dashboard":return<DashboardModule/>;case"gis":return<GISModule/>;case"assets":return<AssetModule/>;case"patrol":return<PatrolModule/>;case"maintenance":return<MaintenanceModule/>;case"reports":return<ReportsModule/>;default:return<DashboardModule/>;}};
+
+  return(
+    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+      <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between flex-shrink-0 z-30" style={{height:56}}>
+        <div className="flex items-center gap-3">
+          <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg" onClick={()=>setMobileMenu(true)}><I.Menu size={20}/></button>
+          <div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}><I.Building size={16} className="text-white"/></div><div className="hidden sm:block"><span className="text-sm font-bold text-gray-900">PFMS</span><span className="text-xs text-gray-400 ml-1.5 hidden md:inline">物業與設施管理系統</span></div></div>
+        </div>
+        <nav className="hidden md:flex items-center gap-1">{MODS.map(m=>(<button key={m.id} onClick={()=>setMod(m.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}><m.Ic size={15}/><span>{m.label}</span></button>))}</nav>
+        <div className="flex items-center gap-2"><button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><I.Bell size={18}/><span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold flex items-center justify-center rounded-full" style={{fontSize:9}}>4</span></button><div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">SJ</div></div>
+      </header>
+      {mobileMenu&&<div className="fixed inset-0 z-50"><div className="absolute inset-0 bg-black bg-opacity-40" onClick={()=>setMobileMenu(false)}/><div className="relative bg-white shadow-xl slide-in-left" style={{width:280,height:"100%"}}><div className="p-4 border-b border-gray-100 flex items-center justify-between"><span className="text-sm font-bold text-gray-900">PFMS</span><button onClick={()=>setMobileMenu(false)} className="text-gray-400"><I.X size={20}/></button></div><nav className="p-3 space-y-1">{MODS.map(m=>(<button key={m.id} onClick={()=>{setMod(m.id);setMobileMenu(false);}} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-600 hover:bg-gray-50"}`}><m.Ic size={18}/><span>{m.label}</span></button>))}</nav></div></div>}
+      <main className="flex-1 overflow-auto" style={{background:isGIS?"#0a1628":undefined}}>{renderMod()}</main>
+    </div>
+  );
+};
+
+ReactDOM.render(<App/>,document.getElementById("root"));
+</script>
 </body>
 </html>
