@@ -10,42 +10,24 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Cesium -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-    <!-- Mapbox GL JS -->
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html,body,#root{height:100%;width:100%;overflow:hidden}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;-webkit-font-smoothing:antialiased}
-        ::-webkit-scrollbar{width:5px;height:5px}
-        ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.3);border-radius:10px}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.3);border-radius:10px}
         @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideInLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
         @keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
-        .fade-in{animation:fadeIn .4s ease-out}
-        .slide-in-left{animation:slideInLeft .3s ease-out}
-        .slide-in-right{animation:slideInRight .3s ease-out}
-        .slide-up{animation:slideUp .3s ease-out}
-        .spin{animation:spin 1s linear infinite}
-        .hover-lift{transition:transform .2s,box-shadow .2s}
-        .hover-lift:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.08)}
-        .three-canvas canvas{display:block;width:100%!important;height:100%!important;cursor:grab}
-        .three-canvas canvas:active{cursor:grabbing}
-        button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-        input{font-size:16px}
+        .fade-in{animation:fadeIn .4s ease-out}.slide-in-left{animation:slideInLeft .3s ease-out}.slide-in-right{animation:slideInRight .3s ease-out}.slide-up{animation:slideUp .3s ease-out}.spin{animation:spin 1s linear infinite}
+        .hover-lift{transition:transform .2s,box-shadow .2s}.hover-lift:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.08)}
+        .three-canvas canvas{display:block;width:100%!important;height:100%!important;cursor:grab}.three-canvas canvas:active{cursor:grabbing}
+        button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}input{font-size:16px}
+        .label-3d{position:absolute;pointer-events:auto;cursor:pointer;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;transition:transform .15s;z-index:5}.label-3d:hover{transform:scale(1.15);z-index:10}
         .cesium-widget,.cesium-viewer{width:100%!important;height:100%!important}
         .cesium-viewer .cesium-viewer-toolbar,.cesium-viewer .cesium-viewer-animationContainer,.cesium-viewer .cesium-viewer-timelineContainer,.cesium-viewer .cesium-viewer-bottom,.cesium-viewer .cesium-viewer-fullscreenContainer{display:none!important}
-        .mapboxgl-map{width:100%!important;height:100%!important}
-        .mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{display:none!important}
-        /* 3D Label overlay */
-        .label-3d{position:absolute;pointer-events:auto;cursor:pointer;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;transition:transform .15s,opacity .15s;z-index:5;backdrop-filter:blur(6px)}
-        .label-3d:hover{transform:scale(1.15);z-index:10}
+        .mapboxgl-map{width:100%!important;height:100%!important}.mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{display:none!important}
     </style>
 </head>
 <body>
@@ -53,7 +35,7 @@
 <script type="text/babel">
 const{useState,useEffect,useRef,useMemo,useCallback}=React;
 
-// ============ SVG Icon System ============
+// ============ SVG Icons ============
 const Ic=({d,size=18,className=""})=>(
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
     {Array.isArray(d)?d.map((p,i)=>{
@@ -78,12 +60,10 @@ const I={
   ChevDown:(p)=><Ic {...p} d="M6 9l6 6 6-6"/>,
   ChevRight:(p)=><Ic {...p} d="M9 18l6-6-6-6"/>,
   ChevLeft:(p)=><Ic {...p} d="M15 18l-6-6 6-6"/>,
-  Back:(p)=><Ic {...p} d={["M19 12H5","M12 19l-7-7 7-7"]}/>,
   Building:(p)=><Ic {...p} d={["M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18","M2 22h20"]}/>,
   Layers:(p)=><Ic {...p} d={["M12 2L2 7l10 5 10-5-10-5z","M2 17l10 5 10-5","M2 12l10 5 10-5"]}/>,
   MapPin:(p)=><Ic {...p} d={["M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z",{t:'c',cx:12,cy:10,r:3}]}/>,
   Server:(p)=><Ic {...p} d={[{t:'r',x:2,y:2,w:20,h:8,rx:2},{t:'r',x:2,y:14,w:20,h:8,rx:2}]}/>,
-  Cpu:(p)=><Ic {...p} d={[{t:'r',x:4,y:4,w:16,h:16,rx:2},"M9 9h6v6H9z"]}/>,
   Alert:(p)=><Ic {...p} d={["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z",{t:'l',x1:12,y1:9,x2:12,y2:13},{t:'l',x1:12,y1:17,x2:12.01,y2:17}]}/>,
   Check:(p)=><Ic {...p} d={["M22 11.08V12a10 10 0 1 1-5.93-9.14","M22 4L12 14.01l-3-3"]}/>,
   Clock:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},"M12 6v6l4 2"]}/>,
@@ -94,10 +74,10 @@ const I={
   ZoomIn:(p)=><Ic {...p} d={[{t:'c',cx:11,cy:11,r:8},{t:'l',x1:21,y1:21,x2:16.65,y2:16.65},{t:'l',x1:11,y1:8,x2:11,y2:14},{t:'l',x1:8,y1:11,x2:14,y2:11}]}/>,
   ZoomOut:(p)=><Ic {...p} d={[{t:'c',cx:11,cy:11,r:8},{t:'l',x1:21,y1:21,x2:16.65,y2:16.65},{t:'l',x1:8,y1:11,x2:14,y2:11}]}/>,
   RotateCcw:(p)=><Ic {...p} d={["M1 4v6h6","M3.51 15a9 9 0 1 0 2.13-9.36L1 10"]}/>,
-  Locate:(p)=><Ic {...p} d={[{t:'l',x1:12,y1:2,x2:12,y2:6},{t:'l',x1:12,y1:18,x2:12,y2:22},{t:'l',x1:2,y1:12,x2:6,y2:12},{t:'l',x1:18,y1:12,x2:22,y2:12},{t:'c',cx:12,cy:12,r:4}]}/>,
+  Locate:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:4},{t:'l',x1:12,y1:2,x2:12,y2:6},{t:'l',x1:12,y1:18,x2:12,y2:22},{t:'l',x1:2,y1:12,x2:6,y2:12},{t:'l',x1:18,y1:12,x2:22,y2:12}]}/>,
   Activity:(p)=><Ic {...p} d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
   Gauge:(p)=><Ic {...p} d={["M12 15l3.5-7","M2 12a10 10 0 1 1 20 0"]}/>,
-  Thermo:(p)=><Ic {...p} d={["M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"]}/>,
+  Thermo:(p)=><Ic {...p} d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>,
   Zap:(p)=><Ic {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>,
   Download:(p)=><Ic {...p} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4","M7 10l5 5 5-5","M12 15V3"]}/>,
   Refresh:(p)=><Ic {...p} d={["M23 4v6h-6","M1 20v-6h6","M3.51 9a9 9 0 0 1 14.85-3.36L23 10","M1 14l4.64 4.36A9 9 0 0 0 20.49 15"]}/>,
@@ -108,433 +88,315 @@ const I={
   Target:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},{t:'c',cx:12,cy:12,r:6},{t:'c',cx:12,cy:12,r:2}]}/>,
   Star:(p)=><Ic {...p} d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>,
   Scan:(p)=><Ic {...p} d={["M3 7V5a2 2 0 0 1 2-2h2","M17 3h2a2 2 0 0 1 2 2v2","M21 17v2a2 2 0 0 1-2 2h-2","M7 21H5a2 2 0 0 1-2-2v-2"]}/>,
-  Filter:(p)=><Ic {...p} d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>,
-  Settings:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:3},"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"]}/>,
-  User:(p)=><Ic {...p} d={["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2",{t:'c',cx:12,cy:7,r:4}]}/>,
-  Calendar:(p)=><Ic {...p} d={[{t:'r',x:3,y:4,w:18,h:18,rx:2},"M16 2v4","M8 2v4","M3 10h18"]}/>,
-  Key:(p)=><Ic {...p} d={["M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"]}/>,
-  Info:(p)=><Ic {...p} d={[{t:'c',cx:12,cy:12,r:10},{t:'l',x1:12,y1:16,x2:12,y2:12},{t:'l',x1:12,y1:8,x2:12.01,y2:8}]}/>,
-  ExternalLink:(p)=><Ic {...p} d={["M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6","M15 3h6v6","M10 14L21 3"]}/>,
+  Loader:(p)=><Ic {...p} d={["M21 12a9 9 0 1 1-6.219-8.56"]}/>,
 };
 
 // ============ Data ============
 const SITES=[
   {id:"s1",name:"台北資料中心",type:"datacenter",address:"台北市大安區忠孝東路四段200號",lat:25.0419,lng:121.5654,status:"active",assets:342,alerts:3,
     floors:[
-      {id:"f1",name:"B2F 電力設施",level:-2,zones:[
-        {id:"z1",name:"UPS區",assets:[
-          {id:"a1",name:"UPS-001",type:"UPS",status:"active",temp:28.5,power:85,model:"APC Smart-UPS 3000"},
-          {id:"a2",name:"UPS-002",type:"UPS",status:"active",temp:27.3,power:72,model:"APC Smart-UPS 3000"},
-        ]},{id:"z2",name:"配電區",assets:[
-          {id:"a3",name:"PDU-A01",type:"PDU",status:"active",temp:31.2,power:65,model:"Eaton ePDU G3"},
-        ]},
-      ]},
-      {id:"f2",name:"B1F 主機房",level:-1,zones:[
-        {id:"z3",name:"機櫃區A",assets:[
-          {id:"a4",name:"Rack-C08",type:"Server Rack",status:"active",temp:24.1,power:92,model:"Dell R370 42U",subItems:[
-            {id:"a4-1",name:"25U-26U: Dell R750",type:"Server",status:"active"},
-            {id:"a4-2",name:"23U-24U: Dell R750",type:"Server",status:"maintenance"},
-            {id:"a4-3",name:"20U-22U: NetApp AFF",type:"Storage",status:"active"},
-          ]},
-          {id:"a5",name:"Rack-C09",type:"Server Rack",status:"active",temp:23.8,power:88,model:"Dell R370 42U"},
-          {id:"a6",name:"Rack-C10",type:"Server Rack",status:"warning",temp:29.5,power:95,model:"Dell R370 42U"},
-        ]},{id:"z4",name:"機櫃區B",assets:[
-          {id:"a7",name:"Rack-C15",type:"Server Rack",status:"active",temp:22.9,power:78,model:"HPE G2 42U"},
-          {id:"a8",name:"Rack-C16",type:"Server Rack",status:"active",temp:23.1,power:81,model:"HPE G2 42U"},
-        ]},{id:"z5",name:"網路區",assets:[
-          {id:"a9",name:"Core-SW01",type:"Switch",status:"active",temp:35.2,power:45,model:"Cisco Nexus 9300"},
-          {id:"a10",name:"Core-SW02",type:"Switch",status:"active",temp:34.8,power:43,model:"Cisco Nexus 9300"},
-        ]},
-      ]},
-      {id:"f3",name:"1F 管理中心",level:1,zones:[
-        {id:"z6",name:"監控室",assets:[
-          {id:"a11",name:"監控主機",type:"Workstation",status:"active",temp:26.0,power:35,model:"Dell Precision 7920"},
-        ]},
-      ]},
-    ]
-  },
-  {id:"s2",name:"新竹科技廠",type:"factory",address:"新竹市東區光復路二段101號",lat:24.8067,lng:120.9717,status:"active",assets:528,alerts:1,
-    floors:[{id:"f4",name:"1F 生產線",level:1,zones:[
-      {id:"z7",name:"CNC加工區",assets:[
-        {id:"a12",name:"CNC-001",type:"CNC Machine",status:"active",temp:42.1,power:78,model:"FANUC α-D21MiB5"},
-        {id:"a13",name:"CNC-002",type:"CNC Machine",status:"maintenance",temp:0,power:0,model:"FANUC α-D21MiB5"},
-      ]},
-    ]}]
-  },
-  {id:"s3",name:"高雄物流中心",type:"warehouse",address:"高雄市前鎮區成功二路88號",lat:22.6273,lng:120.3014,status:"active",assets:186,alerts:0,
-    floors:[{id:"f5",name:"1F 倉儲區",level:1,zones:[
-      {id:"z8",name:"A區",assets:[
-        {id:"a14",name:"堆高機-01",type:"Forklift",status:"active",temp:0,power:60,model:"Toyota 8FBN25"},
-      ]},
-    ]}]
-  },
+      {id:"f1",name:"B2F 電力設施",level:-2,zones:[{id:"z1",name:"UPS區",assets:[{id:"a1",name:"UPS-001",type:"UPS",status:"active",temp:28.5,power:85,model:"APC Smart-UPS 3000"},{id:"a2",name:"UPS-002",type:"UPS",status:"active",temp:27.3,power:72,model:"APC Smart-UPS 3000"}]},{id:"z2",name:"配電區",assets:[{id:"a3",name:"PDU-A01",type:"PDU",status:"active",temp:31.2,power:65,model:"Eaton ePDU G3"}]}]},
+      {id:"f2",name:"B1F 主機房",level:-1,zones:[{id:"z3",name:"機櫃區A",assets:[{id:"a4",name:"Rack-C08",type:"Server Rack",status:"active",temp:24.1,power:92,model:"Dell R370 42U",subItems:[{id:"a4-1",name:"25U-26U: Dell R750",type:"Server",status:"active"},{id:"a4-2",name:"23U-24U: Dell R750",type:"Server",status:"maintenance"},{id:"a4-3",name:"20U-22U: NetApp AFF",type:"Storage",status:"active"}]},{id:"a5",name:"Rack-C09",type:"Server Rack",status:"active",temp:23.8,power:88,model:"Dell R370 42U"},{id:"a6",name:"Rack-C10",type:"Server Rack",status:"warning",temp:29.5,power:95,model:"Dell R370 42U"}]},{id:"z4",name:"機櫃區B",assets:[{id:"a7",name:"Rack-C15",type:"Server Rack",status:"active",temp:22.9,power:78,model:"HPE G2 42U"},{id:"a8",name:"Rack-C16",type:"Server Rack",status:"active",temp:23.1,power:81,model:"HPE G2 42U"}]},{id:"z5",name:"網路區",assets:[{id:"a9",name:"Core-SW01",type:"Switch",status:"active",temp:35.2,power:45,model:"Cisco Nexus 9300"},{id:"a10",name:"Core-SW02",type:"Switch",status:"active",temp:34.8,power:43,model:"Cisco Nexus 9300"}]}]},
+      {id:"f3",name:"1F 管理中心",level:1,zones:[{id:"z6",name:"監控室",assets:[{id:"a11",name:"監控主機",type:"Workstation",status:"active",temp:26.0,power:35,model:"Dell Precision 7920"}]}]}
+    ]},
+  {id:"s2",name:"新竹科技廠",type:"factory",address:"新竹市東區光復路二段101號",lat:24.8067,lng:120.9717,status:"active",assets:528,alerts:1,floors:[{id:"f4",name:"1F 生產線",level:1,zones:[{id:"z7",name:"CNC加工區",assets:[{id:"a12",name:"CNC-001",type:"CNC Machine",status:"active",temp:42.1,power:78,model:"FANUC α-D21MiB5"},{id:"a13",name:"CNC-002",type:"CNC Machine",status:"maintenance",temp:0,power:0,model:"FANUC α-D21MiB5"}]}]}]},
+  {id:"s3",name:"高雄物流中心",type:"warehouse",address:"高雄市前鎮區成功二路88號",lat:22.6273,lng:120.3014,status:"active",assets:186,alerts:0,floors:[{id:"f5",name:"1F 倉儲區",level:1,zones:[{id:"z8",name:"A區",assets:[{id:"a14",name:"堆高機-01",type:"Forklift",status:"active",temp:0,power:60,model:"Toyota 8FBN25"}]}]}]}
 ];
-
 const PATROLS=[
-  {id:"p1",name:"日班巡檢-A線",route:"B1F主機房完整巡檢",status:"completed",checkpoints:12,completed:12,time:"08:00-10:30",patrol:"王小明",items:[{name:"溫度檢查",result:"正常",val:"24.1°C"},{name:"濕度檢查",result:"正常",val:"45%"},{name:"電源狀態",result:"正常",val:"穩定"},{name:"異味檢查",result:"正常",val:"無"},{name:"漏水檢查",result:"正常",val:"無"}]},
-  {id:"p2",name:"日班巡檢-B線",route:"B2F電力設施巡檢",status:"in-progress",checkpoints:8,completed:5,time:"09:00-11:00",patrol:"李建華",items:[{name:"UPS狀態",result:"正常",val:"運行中"},{name:"電池溫度",result:"warning",val:"32°C"},{name:"輸出電壓",result:"正常",val:"220V"}]},
+  {id:"p1",name:"日班巡檢-A線",route:"B1F主機房完整巡檢",status:"completed",checkpoints:12,completed:12,time:"08:00-10:30",patrol:"王小明",items:[{name:"溫度檢查",result:"正常",val:"24.1°C"},{name:"濕度檢查",result:"正常",val:"45%"},{name:"電源狀態",result:"正常",val:"穩定"}]},
+  {id:"p2",name:"日班巡檢-B線",route:"B2F電力設施巡檢",status:"in-progress",checkpoints:8,completed:5,time:"09:00-11:00",patrol:"李建華",items:[{name:"UPS狀態",result:"正常",val:"運行中"},{name:"電池溫度",result:"warning",val:"32°C"}]},
   {id:"p3",name:"夜班巡檢-A線",route:"全區安全巡檢",status:"scheduled",checkpoints:15,completed:0,time:"22:00-00:30",patrol:"張志偉",items:[]},
   {id:"p4",name:"特殊巡檢",route:"UPS緊急檢查",status:"scheduled",checkpoints:4,completed:0,time:"14:00-15:00",patrol:"陳大文",items:[]},
 ];
-
 const WO=[
-  {id:"wo1",number:"WO-2026-0318-001",title:"Rack-C10 溫度異常處理",priority:"high",status:"in-progress",asset:"Rack-C10",assignee:"陳技師",created:"2026-03-18 08:15",due:"2026-03-18 17:00",desc:"Rack-C10 溫度持續超過 29°C，已排除空調異常，需檢查伺服器散熱模組。",history:[{time:"08:15",action:"工單建立"},{time:"08:30",action:"指派陳技師"},{time:"09:00",action:"技師到場檢查"},{time:"09:45",action:"發現風扇異常，申請備品"}]},
-  {id:"wo2",number:"WO-2026-0317-003",title:"CNC-002 定期保養",priority:"normal",status:"in-progress",asset:"CNC-002",assignee:"林技師",created:"2026-03-17 14:00",due:"2026-03-19 17:00",desc:"CNC-002 已達 2000 小時運行，需執行定期保養。",history:[{time:"14:00",action:"系統自動生成工單"},{time:"14:30",action:"指派林技師"}]},
-  {id:"wo3",number:"WO-2026-0318-002",title:"Core-SW01 韌體升級",priority:"low",status:"pending",asset:"Core-SW01",assignee:"待指派",created:"2026-03-18 09:30",due:"2026-03-22 17:00",desc:"Cisco Nexus 9300 韌體升級至 10.3(4a)，修復安全漏洞。",history:[{time:"09:30",action:"工單建立"}]},
-  {id:"wo4",number:"WO-2026-0316-001",title:"UPS-001 電池更換",priority:"high",status:"completed",asset:"UPS-001",assignee:"王技師",created:"2026-03-16 10:00",due:"2026-03-17 17:00",desc:"UPS-001 電池組壽命到期，需更換為新電池組。",history:[{time:"10:00",action:"工單建立"},{time:"10:30",action:"指派王技師"},{time:"13:00",action:"電池到貨"},{time:"15:30",action:"更換完成"},{time:"16:00",action:"測試通過，工單關閉"}]},
+  {id:"wo1",number:"WO-2026-0318-001",title:"Rack-C10 溫度異常處理",priority:"high",status:"in-progress",asset:"Rack-C10",assignee:"陳技師",created:"2026-03-18 08:15",due:"2026-03-18 17:00",desc:"Rack-C10 溫度持續超過 29°C，需檢查散熱模組。",history:[{time:"08:15",action:"工單建立"},{time:"08:30",action:"指派陳技師"},{time:"09:00",action:"技師到場檢查"},{time:"09:45",action:"發現風扇異常，申請備品"}]},
+  {id:"wo2",number:"WO-2026-0317-003",title:"CNC-002 定期保養",priority:"normal",status:"in-progress",asset:"CNC-002",assignee:"林技師",created:"2026-03-17 14:00",due:"2026-03-19 17:00",desc:"CNC-002 已達 2000 小時運行週期。",history:[{time:"14:00",action:"系統自動生成"},{time:"14:30",action:"指派林技師"}]},
+  {id:"wo3",number:"WO-2026-0318-002",title:"Core-SW01 韌體升級",priority:"low",status:"pending",asset:"Core-SW01",assignee:"待指派",created:"2026-03-18 09:30",due:"2026-03-22 17:00",desc:"Cisco Nexus 9300 韌體升級至 10.3(4a)。",history:[{time:"09:30",action:"工單建立"}]},
+  {id:"wo4",number:"WO-2026-0316-001",title:"UPS-001 電池更換",priority:"high",status:"completed",asset:"UPS-001",assignee:"王技師",created:"2026-03-16 10:00",due:"2026-03-17 17:00",desc:"UPS-001 電池組壽命到期。",history:[{time:"10:00",action:"工單建立"},{time:"13:00",action:"電池到貨"},{time:"15:30",action:"更換完成"},{time:"16:00",action:"測試通過"}]},
   {id:"wo5",number:"WO-2026-0318-003",title:"監控室空調維修",priority:"urgent",status:"pending",asset:"監控室HVAC",assignee:"待指派",created:"2026-03-18 11:00",due:"2026-03-18 15:00",desc:"監控室空調無法啟動，室溫已達 30°C。",history:[{time:"11:00",action:"緊急工單建立"}]},
 ];
-
 const KPI={totalSites:3,totalAssets:1056,activeAlerts:4,patrolCompletion:87.5,mtbf:2840,mttr:4.2,oee:91.3,workOrdersOpen:8};
 
-// ============ Utility ============
+// ============ Utilities ============
 const Badge=({children,variant="default",cls=""})=>{
   const v={default:"bg-gray-100 text-gray-700",primary:"bg-blue-50 text-blue-700",success:"bg-green-50 text-green-700",warning:"bg-yellow-50 text-yellow-700",danger:"bg-red-50 text-red-700",info:"bg-blue-50 text-blue-600"};
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${v[variant]||v.default} ${cls}`}>{children}</span>;
+  return <span className={"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium "+(v[variant]||v.default)+" "+cls}>{children}</span>;
 };
-const Dot=({s})=>{
-  const c={active:"bg-green-500",maintenance:"bg-yellow-500",warning:"bg-yellow-500",inactive:"bg-gray-400",critical:"bg-red-500"};
-  return <span className={`inline-block w-2 h-2 rounded-full ${c[s]||c.active}`}/>;
-};
-
-// ============ Detail Modal ============
+const Dot=({s})=><span className={"inline-block w-2 h-2 rounded-full "+(({active:"bg-green-500",maintenance:"bg-yellow-500",warning:"bg-yellow-500",critical:"bg-red-500"})[s]||"bg-green-500")}/>;
 const DetailModal=({title,onClose,children})=>(
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:"rgba(0,0,0,0.5)"}}>
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col slide-up overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><I.X size={18}/></button>
-      </div>
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col slide-up overflow-hidden" style={{maxHeight:"85vh"}}>
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0"><h3 className="text-lg font-bold text-gray-900">{title}</h3><button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"><I.X size={18}/></button></div>
       <div className="flex-1 overflow-y-auto p-6">{children}</div>
     </div>
   </div>
 );
 
-// ============ Three.js 3D Scene (Full Interactive) ============
+// ============ Dynamic SDK Loader ============
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    if(document.querySelector('script[src="'+src+'"]')){resolve();return;}
+    const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+  });
+}
+function loadCSS(href){
+  if(document.querySelector('link[href="'+href+'"]'))return;
+  const l=document.createElement('link');l.rel='stylesheet';l.href=href;document.head.appendChild(l);
+}
+
+// ============ Three.js 3D Scene ============
 const ThreeScene=({selectedAsset,onAssetClick,siteData,onLabelPositions})=>{
   const mountRef=useRef(null);
-  const stateRef=useRef({camera:null,scene:null,renderer:null,meshes:[],animId:null,isDragging:false,prevMouse:{x:0,y:0},spherical:{theta:0,phi:Math.PI/4,radius:40},target:new THREE.Vector3(0,3,0),autoRotate:true});
+  const stateRef=useRef({});
 
   useEffect(()=>{
     if(!mountRef.current)return;
     const el=mountRef.current;
+    const w=el.clientWidth||800;const h=el.clientHeight||600;
     const S=stateRef.current;
-    const w=el.clientWidth,h=el.clientHeight;
 
-    const scene=new THREE.Scene();
-    scene.background=new THREE.Color(0x0a1628);
-    scene.fog=new THREE.FogExp2(0x0a1628,0.006);
-    S.scene=scene;
-
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1628);scene.fog=new THREE.FogExp2(0x0a1628,0.006);
     const camera=new THREE.PerspectiveCamera(55,w/h,0.1,1000);
-    S.camera=camera;
-
     const renderer=new THREE.WebGLRenderer({antialias:true});
-    renderer.setSize(w,h);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.setSize(w,h);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.shadowMap.enabled=true;
     el.appendChild(renderer.domElement);
-    S.renderer=renderer;
+
+    S.spherical={theta:0,phi:Math.PI/4,radius:40};
+    S.target=new THREE.Vector3(0,3,0);
+    S.isDragging=false;S.prevMouse={x:0,y:0};S.autoRotate=true;
 
     // Lights
     scene.add(new THREE.AmbientLight(0x334466,0.6));
-    const dl=new THREE.DirectionalLight(0xffeedd,1.0);dl.position.set(20,30,10);dl.castShadow=true;scene.add(dl);
-    scene.add(Object.assign(new THREE.PointLight(0x3b82f6,1.5,60),{position:new THREE.Vector3(-10,15,-10)}));
-    scene.add(Object.assign(new THREE.PointLight(0x06b6d4,1.0,50),{position:new THREE.Vector3(15,10,15)}));
+    var dl=new THREE.DirectionalLight(0xffeedd,1.0);dl.position.set(20,30,10);dl.castShadow=true;scene.add(dl);
+    var pl1=new THREE.PointLight(0x3b82f6,1.5,60);pl1.position.set(-10,15,-10);scene.add(pl1);
+    var pl2=new THREE.PointLight(0x06b6d4,1.0,50);pl2.position.set(15,10,15);scene.add(pl2);
 
     // Ground + Grid
-    const ground=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0x0d1f3c,roughness:0.9}));
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0x0d1f3c,roughness:0.9}));
     ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-    scene.add(Object.assign(new THREE.GridHelper(80,40,0x1e3a5f,0x162d50),{position:new THREE.Vector3(0,0.01,0)}));
+    var grid=new THREE.GridHelper(80,40,0x1e3a5f,0x162d50);grid.position.y=0.01;scene.add(grid);
 
     // Building
-    const bldg=new THREE.Mesh(new THREE.BoxGeometry(18,10,14),new THREE.MeshPhysicalMaterial({color:0x1e3a5f,metalness:0.3,roughness:0.6,clearcoat:0.2}));
+    var bldg=new THREE.Mesh(new THREE.BoxGeometry(18,10,14),new THREE.MeshPhysicalMaterial({color:0x1e3a5f,metalness:0.3,roughness:0.6,clearcoat:0.2}));
     bldg.position.set(0,5,0);bldg.castShadow=true;scene.add(bldg);
-    for(let i=1;i<=3;i++){const fl=new THREE.Mesh(new THREE.BoxGeometry(18.1,0.05,14.1),new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.4}));fl.position.set(0,i*3,0);scene.add(fl);}
-    [-4,4].forEach(x=>{const ru=new THREE.Mesh(new THREE.BoxGeometry(4,2,3),new THREE.MeshPhysicalMaterial({color:0x334155,metalness:0.5,roughness:0.4}));ru.position.set(x,11,0);ru.castShadow=true;scene.add(ru);});
+    for(var fi=1;fi<=3;fi++){var fl=new THREE.Mesh(new THREE.BoxGeometry(18.1,0.05,14.1),new THREE.MeshBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.4}));fl.position.set(0,fi*3,0);scene.add(fl);}
+    var roofMat=new THREE.MeshPhysicalMaterial({color:0x334155,metalness:0.5,roughness:0.4});
+    [-4,4].forEach(function(x){var ru=new THREE.Mesh(new THREE.BoxGeometry(4,2,3),roofMat);ru.position.set(x,11,0);ru.castShadow=true;scene.add(ru);});
 
     // Assets
-    const allAssets=[];
-    if(siteData?.floors)siteData.floors.forEach(f=>f.zones?.forEach(z=>z.assets?.forEach(a=>allAssets.push(a))));
-    const mats={active:new THREE.MeshPhysicalMaterial({color:0x10b981,metalness:0.6,roughness:0.3,emissive:0x064e3b,emissiveIntensity:0.2}),warning:new THREE.MeshPhysicalMaterial({color:0xf59e0b,metalness:0.6,roughness:0.3,emissive:0x78350f,emissiveIntensity:0.3}),maintenance:new THREE.MeshPhysicalMaterial({color:0x6366f1,metalness:0.6,roughness:0.3,emissive:0x312e81,emissiveIntensity:0.2})};
-    const rackGeo=new THREE.BoxGeometry(1.2,3.5,0.8);
-    const meshes=[];
-    const positions=[[-5,2,-3],[-3,2,-3],[-1,2,-3],[1,2,-3],[3,2,-3],[5,2,-3],[-5,2,0],[-3,2,0],[-1,2,0],[1,2,0],[3,2,0],[5,2,0],[-5,2,3],[-3,2,3],[-1,2,3],[1,2,3],[3,2,3],[5,2,3],[-5,5.5,-3],[-3,5.5,-3],[-1,5.5,-3],[1,5.5,-3],[-5,5.5,0],[-3,5.5,0],[-1,5.5,0],[1,5.5,0]];
-    positions.forEach((pos,i)=>{
-      const asset=allAssets[i%allAssets.length];
-      const st=asset?.status||"active";
-      const rack=new THREE.Mesh(rackGeo,mats[st]||mats.active);
-      rack.position.set(...pos);rack.castShadow=true;
-      rack.userData={id:asset?.id||`r${i}`,name:asset?.name||`Rack-${i}`,type:asset?.type||"Rack",status:st,assetData:asset};
+    var allAssets=[];
+    if(siteData&&siteData.floors)siteData.floors.forEach(function(f){if(f.zones)f.zones.forEach(function(z){if(z.assets)z.assets.forEach(function(a){allAssets.push(a);});});});
+    var matActive=new THREE.MeshPhysicalMaterial({color:0x10b981,metalness:0.6,roughness:0.3,emissive:0x064e3b,emissiveIntensity:0.2});
+    var matWarn=new THREE.MeshPhysicalMaterial({color:0xf59e0b,metalness:0.6,roughness:0.3,emissive:0x78350f,emissiveIntensity:0.3});
+    var matMaint=new THREE.MeshPhysicalMaterial({color:0x6366f1,metalness:0.6,roughness:0.3,emissive:0x312e81,emissiveIntensity:0.2});
+    var rackGeo=new THREE.BoxGeometry(1.2,3.5,0.8);
+    var meshes=[];
+    var positions=[[-5,2,-3],[-3,2,-3],[-1,2,-3],[1,2,-3],[3,2,-3],[5,2,-3],[-5,2,0],[-3,2,0],[-1,2,0],[1,2,0],[3,2,0],[5,2,0],[-5,2,3],[-3,2,3],[-1,2,3],[1,2,3],[3,2,3],[5,2,3],[-5,5.5,-3],[-3,5.5,-3],[-1,5.5,-3],[1,5.5,-3],[-5,5.5,0],[-3,5.5,0],[-1,5.5,0],[1,5.5,0]];
+    positions.forEach(function(pos,i){
+      var asset=allAssets[i%allAssets.length];
+      var st=(asset&&asset.status)||"active";
+      var mat=st==="warning"?matWarn:st==="maintenance"?matMaint:matActive;
+      var rack=new THREE.Mesh(rackGeo,mat);rack.position.set(pos[0],pos[1],pos[2]);rack.castShadow=true;
+      rack.userData={id:(asset&&asset.id)||("r"+i),name:(asset&&asset.name)||("Rack-"+i),type:(asset&&asset.type)||"Rack",status:st,assetData:asset};
       scene.add(rack);meshes.push(rack);
     });
-    S.meshes=meshes;
-
     // LEDs
-    meshes.forEach(rack=>{
-      const c=rack.userData.status==="warning"?0xf59e0b:0x10b981;
-      for(let j=0;j<3;j++){const led=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8),new THREE.MeshBasicMaterial({color:c}));led.position.copy(rack.position);led.position.x+=0.65;led.position.y+=0.5+j*0.8;scene.add(led);}
-    });
+    var ledGeo=new THREE.SphereGeometry(0.08,8,8);
+    meshes.forEach(function(rack){var c=rack.userData.status==="warning"?0xf59e0b:0x10b981;for(var j=0;j<3;j++){var led=new THREE.Mesh(ledGeo,new THREE.MeshBasicMaterial({color:c}));led.position.set(rack.position.x+0.65,rack.position.y+0.5+j*0.8,rack.position.z);scene.add(led);}});
     // Network lines
-    const lineMat=new THREE.LineBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.15});
-    for(let i=0;i<meshes.length-1;i++){if(Math.random()>0.5){const pts=[meshes[i].position.clone(),meshes[i+1].position.clone()];pts[0].y+=2;pts[1].y+=2;scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat));}}
+    var lineMat=new THREE.LineBasicMaterial({color:0x3b82f6,transparent:true,opacity:0.15});
+    for(var li=0;li<meshes.length-1;li++){if(Math.random()>0.5){var pts=[meshes[li].position.clone(),meshes[li+1].position.clone()];pts[0].y+=2;pts[1].y+=2;scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat));}}
     // Surrounding
-    [[-18,2.5,-8],[20,2.5,5],[-15,2.5,12],[22,2.5,-10]].forEach(pos=>{const sb=new THREE.Mesh(new THREE.BoxGeometry(6,5,5),new THREE.MeshPhysicalMaterial({color:0x162d50,metalness:0.2,roughness:0.7}));sb.position.set(...pos);sb.castShadow=true;scene.add(sb);});
+    var sbMat=new THREE.MeshPhysicalMaterial({color:0x162d50,metalness:0.2,roughness:0.7});
+    [[-18,2.5,-8],[20,2.5,5],[-15,2.5,12],[22,2.5,-10]].forEach(function(p){var sb=new THREE.Mesh(new THREE.BoxGeometry(6,5,5),sbMat);sb.position.set(p[0],p[1],p[2]);sb.castShadow=true;scene.add(sb);});
     // Particles
-    const pCount=150;const pGeo=new THREE.BufferGeometry();const pPos=new Float32Array(pCount*3);
-    for(let i=0;i<pCount;i++){pPos[i*3]=(Math.random()-0.5)*80;pPos[i*3+1]=Math.random()*30+2;pPos[i*3+2]=(Math.random()-0.5)*80;}
+    var pCount=150;var pGeo=new THREE.BufferGeometry();var pPos=new Float32Array(pCount*3);
+    for(var pi=0;pi<pCount;pi++){pPos[pi*3]=(Math.random()-0.5)*80;pPos[pi*3+1]=Math.random()*30+2;pPos[pi*3+2]=(Math.random()-0.5)*80;}
     pGeo.setAttribute("position",new THREE.BufferAttribute(pPos,3));
-    const particles=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0x3b82f6,size:0.15,transparent:true,opacity:0.4}));
-    scene.add(particles);
+    var particles=new THREE.Points(pGeo,new THREE.PointsMaterial({color:0x3b82f6,size:0.15,transparent:true,opacity:0.4}));scene.add(particles);
 
-    // --- Camera orbit system ---
-    const updateCamera=()=>{
-      const sp=S.spherical;
-      camera.position.x=S.target.x+sp.radius*Math.sin(sp.phi)*Math.cos(sp.theta);
-      camera.position.y=S.target.y+sp.radius*Math.cos(sp.phi);
-      camera.position.z=S.target.z+sp.radius*Math.sin(sp.phi)*Math.sin(sp.theta);
+    // Camera update
+    var updateCamera=function(){
+      camera.position.x=S.target.x+S.spherical.radius*Math.sin(S.spherical.phi)*Math.cos(S.spherical.theta);
+      camera.position.y=S.target.y+S.spherical.radius*Math.cos(S.spherical.phi);
+      camera.position.z=S.target.z+S.spherical.radius*Math.sin(S.spherical.phi)*Math.sin(S.spherical.theta);
       camera.lookAt(S.target);
     };
     updateCamera();
 
-    // Mouse controls
-    const onMouseDown=(e)=>{S.isDragging=true;S.prevMouse={x:e.clientX,y:e.clientY};S.autoRotate=false;};
-    const onMouseMove=(e)=>{
-      if(!S.isDragging)return;
-      const dx=e.clientX-S.prevMouse.x,dy=e.clientY-S.prevMouse.y;
-      if(e.buttons===1){// Left: rotate
-        S.spherical.theta-=dx*0.005;
-        S.spherical.phi=Math.max(0.2,Math.min(Math.PI/2-0.05,S.spherical.phi-dy*0.005));
-      }else if(e.buttons===2||e.buttons===4){// Right/Middle: pan
-        const right=new THREE.Vector3();const up=new THREE.Vector3();
-        camera.getWorldDirection(up);
-        right.crossVectors(up,camera.up).normalize();
-        up.copy(camera.up).normalize();
-        S.target.add(right.multiplyScalar(-dx*0.05));
-        S.target.add(up.multiplyScalar(dy*0.05));
-      }
-      S.prevMouse={x:e.clientX,y:e.clientY};
-      updateCamera();
+    // Mouse handlers
+    var onMD=function(e){S.isDragging=true;S.prevMouse={x:e.clientX,y:e.clientY};S.autoRotate=false;};
+    var onMM=function(e){if(!S.isDragging)return;var dx=e.clientX-S.prevMouse.x,dy=e.clientY-S.prevMouse.y;
+      if(e.buttons===1){S.spherical.theta-=dx*0.005;S.spherical.phi=Math.max(0.2,Math.min(1.5,S.spherical.phi-dy*0.005));}
+      else if(e.buttons===2||e.buttons===4){var right=new THREE.Vector3();var up=new THREE.Vector3();camera.getWorldDirection(up);right.crossVectors(up,camera.up).normalize();up.copy(camera.up).normalize();S.target.add(right.multiplyScalar(-dx*0.05));S.target.add(up.multiplyScalar(dy*0.05));}
+      S.prevMouse={x:e.clientX,y:e.clientY};updateCamera();
     };
-    const onMouseUp=()=>{S.isDragging=false;};
-    const onWheel=(e)=>{
-      e.preventDefault();
-      S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius+e.deltaY*0.04));
-      S.autoRotate=false;
-      updateCamera();
+    var onMU=function(){S.isDragging=false;};
+    var onWH=function(e){e.preventDefault();S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius+e.deltaY*0.04));S.autoRotate=false;updateCamera();};
+    var onDC=function(e){
+      var rect=el.getBoundingClientRect();var mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      var ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);var hits=ray.intersectObjects(meshes);
+      if(hits.length>0){var pt=hits[0].point;S.target.set(pt.x,pt.y,pt.z);S.spherical.radius=Math.max(8,S.spherical.radius*0.5);updateCamera();if(onAssetClick)onAssetClick(hits[0].object.userData);}
+      else{S.spherical.radius=Math.max(8,S.spherical.radius*0.7);updateCamera();}
     };
-    const onDblClick=(e)=>{
-      // Double click: zoom to clicked point
-      const rect=el.getBoundingClientRect();
-      const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
-      const raycaster=new THREE.Raycaster();
-      raycaster.setFromCamera(mouse,camera);
-      const hits=raycaster.intersectObjects(meshes);
-      if(hits.length>0){
-        const pt=hits[0].point;
-        S.target.set(pt.x,pt.y,pt.z);
-        S.spherical.radius=Math.max(8,S.spherical.radius*0.5);
-        updateCamera();
-        onAssetClick?.(hits[0].object.userData);
-      } else {
-        // Zoom in toward mouse direction
-        S.spherical.radius=Math.max(8,S.spherical.radius*0.7);
-        updateCamera();
-      }
+    var onCK=function(e){
+      var rect=el.getBoundingClientRect();var mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+      var ray=new THREE.Raycaster();ray.setFromCamera(mouse,camera);var hits=ray.intersectObjects(meshes);
+      if(hits.length>0&&onAssetClick)onAssetClick(hits[0].object.userData);
     };
-    const onClick=(e)=>{
-      const rect=el.getBoundingClientRect();
-      const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
-      const raycaster=new THREE.Raycaster();
-      raycaster.setFromCamera(mouse,camera);
-      const hits=raycaster.intersectObjects(meshes);
-      if(hits.length>0)onAssetClick?.(hits[0].object.userData);
-    };
-    const onContext=(e)=>e.preventDefault();
+    var onCM=function(e){e.preventDefault();};
+    el.addEventListener("mousedown",onMD);el.addEventListener("mousemove",onMM);el.addEventListener("mouseup",onMU);
+    el.addEventListener("wheel",onWH,{passive:false});el.addEventListener("dblclick",onDC);el.addEventListener("click",onCK);el.addEventListener("contextmenu",onCM);
 
-    el.addEventListener("mousedown",onMouseDown);el.addEventListener("mousemove",onMouseMove);
-    el.addEventListener("mouseup",onMouseUp);el.addEventListener("wheel",onWheel,{passive:false});
-    el.addEventListener("dblclick",onDblClick);el.addEventListener("click",onClick);
-    el.addEventListener("contextmenu",onContext);
-
-    // Touch controls
-    let touchStart=null,touchDist=null;
-    const onTouchStart=(e)=>{
-      if(e.touches.length===1){S.isDragging=true;S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};S.autoRotate=false;}
-      if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;touchDist=Math.sqrt(dx*dx+dy*dy);}
-    };
-    const onTouchMove=(e)=>{
-      e.preventDefault();
-      if(e.touches.length===1&&S.isDragging){
-        const dx=e.touches[0].clientX-S.prevMouse.x,dy=e.touches[0].clientY-S.prevMouse.y;
-        S.spherical.theta-=dx*0.005;S.spherical.phi=Math.max(0.2,Math.min(Math.PI/2-0.05,S.spherical.phi-dy*0.005));
-        S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};updateCamera();
-      }
-      if(e.touches.length===2&&touchDist){
-        const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;
-        const newDist=Math.sqrt(dx*dx+dy*dy);
-        S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius*(touchDist/newDist)));
-        touchDist=newDist;updateCamera();
-      }
-    };
-    const onTouchEnd=()=>{S.isDragging=false;touchDist=null;};
-    el.addEventListener("touchstart",onTouchStart,{passive:false});
-    el.addEventListener("touchmove",onTouchMove,{passive:false});
-    el.addEventListener("touchend",onTouchEnd);
+    // Touch
+    var touchDist=null;
+    var onTS=function(e){if(e.touches.length===1){S.isDragging=true;S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};S.autoRotate=false;}if(e.touches.length===2){var dx2=e.touches[0].clientX-e.touches[1].clientX;var dy2=e.touches[0].clientY-e.touches[1].clientY;touchDist=Math.sqrt(dx2*dx2+dy2*dy2);}};
+    var onTM=function(e){e.preventDefault();if(e.touches.length===1&&S.isDragging){var dx3=e.touches[0].clientX-S.prevMouse.x;var dy3=e.touches[0].clientY-S.prevMouse.y;S.spherical.theta-=dx3*0.005;S.spherical.phi=Math.max(0.2,Math.min(1.5,S.spherical.phi-dy3*0.005));S.prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};updateCamera();}if(e.touches.length===2&&touchDist){var dx4=e.touches[0].clientX-e.touches[1].clientX;var dy4=e.touches[0].clientY-e.touches[1].clientY;var nd=Math.sqrt(dx4*dx4+dy4*dy4);S.spherical.radius=Math.max(8,Math.min(80,S.spherical.radius*(touchDist/nd)));touchDist=nd;updateCamera();}};
+    var onTE=function(){S.isDragging=false;touchDist=null;};
+    el.addEventListener("touchstart",onTS,{passive:false});el.addEventListener("touchmove",onTM,{passive:false});el.addEventListener("touchend",onTE);
 
     // Animate
-    let t=0;
-    const animate=()=>{
-      S.animId=requestAnimationFrame(animate);t+=0.01;
+    var t=0;var animId;
+    var animate=function(){
+      animId=requestAnimationFrame(animate);t+=0.01;
       if(S.autoRotate){S.spherical.theta+=0.002;updateCamera();}
-      const pp=particles.geometry.attributes.position.array;
-      for(let i=0;i<pCount;i++){pp[i*3+1]+=0.02;if(pp[i*3+1]>35)pp[i*3+1]=2;}
-      particles.geometry.attributes.position.needsUpdate=true;
-      meshes.forEach(m=>{m.scale.setScalar(selectedAsset&&m.userData.id===selectedAsset.id?1.0+0.1*Math.sin(t*4):1.0);});
+      var pp=particles.geometry.attributes.position.array;for(var pi2=0;pi2<pCount;pi2++){pp[pi2*3+1]+=0.02;if(pp[pi2*3+1]>35)pp[pi2*3+1]=2;}particles.geometry.attributes.position.needsUpdate=true;
+      meshes.forEach(function(m){m.scale.setScalar(selectedAsset&&m.userData.id===selectedAsset.id?1.0+0.1*Math.sin(t*4):1.0);});
       renderer.render(scene,camera);
-
-      // Project labels to screen
-      if(onLabelPositions){
-        const labels=[];
-        meshes.forEach(m=>{
-          const pos=m.position.clone();pos.y+=2.2;
-          const projected=pos.project(camera);
-          const x=(projected.x*0.5+0.5)*w;
-          const y=(-projected.y*0.5+0.5)*h;
-          if(projected.z<1)labels.push({id:m.userData.id,name:m.userData.name,status:m.userData.status,x,y,data:m.userData});
-        });
-        onLabelPositions(labels);
-      }
+      if(onLabelPositions){var curW=el.clientWidth||w;var curH=el.clientHeight||h;var labs=[];meshes.forEach(function(m){var pos2=m.position.clone();pos2.y+=2.2;var proj=pos2.project(camera);var lx=(proj.x*0.5+0.5)*curW;var ly=(-proj.y*0.5+0.5)*curH;if(proj.z<1)labs.push({id:m.userData.id,name:m.userData.name,status:m.userData.status,x:lx,y:ly,data:m.userData});});onLabelPositions(labs);}
     };
     animate();
 
-    const onResize=()=>{const nw=el.clientWidth,nh=el.clientHeight;camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};
+    var onResize=function(){var nw=el.clientWidth;var nh=el.clientHeight;if(nw&&nh){camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);}};
     window.addEventListener("resize",onResize);
 
-    return()=>{
-      cancelAnimationFrame(S.animId);
-      el.removeEventListener("mousedown",onMouseDown);el.removeEventListener("mousemove",onMouseMove);
-      el.removeEventListener("mouseup",onMouseUp);el.removeEventListener("wheel",onWheel);
-      el.removeEventListener("dblclick",onDblClick);el.removeEventListener("click",onClick);
-      el.removeEventListener("contextmenu",onContext);
-      el.removeEventListener("touchstart",onTouchStart);el.removeEventListener("touchmove",onTouchMove);el.removeEventListener("touchend",onTouchEnd);
+    return function(){
+      cancelAnimationFrame(animId);
+      el.removeEventListener("mousedown",onMD);el.removeEventListener("mousemove",onMM);el.removeEventListener("mouseup",onMU);
+      el.removeEventListener("wheel",onWH);el.removeEventListener("dblclick",onDC);el.removeEventListener("click",onCK);el.removeEventListener("contextmenu",onCM);
+      el.removeEventListener("touchstart",onTS);el.removeEventListener("touchmove",onTM);el.removeEventListener("touchend",onTE);
       window.removeEventListener("resize",onResize);
-      if(renderer.domElement.parentNode)el.removeChild(renderer.domElement);renderer.dispose();
+      try{if(renderer.domElement.parentNode)el.removeChild(renderer.domElement);renderer.dispose();}catch(ex){}
     };
   },[siteData]);
-
   return <div ref={mountRef} className="three-canvas" style={{width:"100%",height:"100%"}}/>;
 };
 
-// ============ Cesium Map ============
+// ============ Cesium Map (Dynamic Load) ============
 const CesiumMap=({sites})=>{
-  const ref=useRef(null);
-  const viewerRef=useRef(null);
+  const ref=useRef(null);const viewerRef=useRef(null);const[loading,setLoading]=useState(true);const[error,setError]=useState(null);
   useEffect(()=>{
-    if(!ref.current||viewerRef.current)return;
-    try{
-      Cesium.Ion.defaultAccessToken='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjI0MWIwNy1kNjRkLTQ4NjktODZkMS02OTczMTBhMzI2ZGQiLCJpZCI6MjY0MzM4LCJpYXQiOjE3MzUzMTY5MDh9.v1sBMjSmxVDrWv-4dI41lGRfGtH2djMmLU1U8Z2xWRE';
-      const viewer=new Cesium.Viewer(ref.current,{
-        terrainProvider:Cesium.createWorldTerrain(),animation:false,timeline:false,baseLayerPicker:false,
-        fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,
-        infoBox:true,sceneModePicker:false,selectionIndicator:true,navigationHelpButton:false,
-      });
-      viewerRef.current=viewer;
-      // Add site markers
-      sites.forEach(site=>{
-        viewer.entities.add({
-          name:site.name,position:Cesium.Cartesian3.fromDegrees(site.lng,site.lat,100),
-          billboard:{image:Cesium.buildModuleUrl('Assets/Textures/maki/marker.png'),width:32,height:32,verticalOrigin:Cesium.VerticalOrigin.BOTTOM},
-          label:{text:site.name,font:'14px sans-serif',fillColor:Cesium.Color.WHITE,outlineColor:Cesium.Color.BLACK,outlineWidth:2,style:Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:Cesium.VerticalOrigin.BOTTOM,pixelOffset:new Cesium.Cartesian2(0,-36)},
-          description:`<div><b>${site.name}</b><br/>地址：${site.address}<br/>資產：${site.assets} 件<br/>告警：${site.alerts} 則</div>`,
+    if(!ref.current)return;
+    var cancelled=false;
+    (async()=>{
+      try{
+        loadCSS('https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Widgets/widgets.css');
+        await loadScript('https://cesium.com/downloads/cesiumjs/releases/1.104/Build/Cesium/Cesium.js');
+        if(cancelled)return;
+        window.Cesium.Ion.defaultAccessToken='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzZjI0MWIwNy1kNjRkLTQ4NjktODZkMS02OTczMTBhMzI2ZGQiLCJpZCI6MjY0MzM4LCJpYXQiOjE3MzUzMTY5MDh9.v1sBMjSmxVDrWv-4dI41lGRfGtH2djMmLU1U8Z2xWRE';
+        var viewer=new window.Cesium.Viewer(ref.current,{animation:false,timeline:false,baseLayerPicker:false,fullscreenButton:false,vrButton:false,geocoder:false,homeButton:false,infoBox:true,sceneModePicker:false,selectionIndicator:true,navigationHelpButton:false});
+        viewerRef.current=viewer;
+        sites.forEach(function(site){
+          viewer.entities.add({name:site.name,position:window.Cesium.Cartesian3.fromDegrees(site.lng,site.lat,100),
+            point:{pixelSize:12,color:site.alerts>0?window.Cesium.Color.ORANGE:window.Cesium.Color.fromCssColorString('#3b82f6'),outlineColor:window.Cesium.Color.WHITE,outlineWidth:2},
+            label:{text:site.name,font:'14px sans-serif',fillColor:window.Cesium.Color.WHITE,outlineColor:window.Cesium.Color.BLACK,outlineWidth:2,style:window.Cesium.LabelStyle.FILL_AND_OUTLINE,verticalOrigin:window.Cesium.VerticalOrigin.BOTTOM,pixelOffset:new window.Cesium.Cartesian2(0,-20)},
+            description:'<div style="font-family:sans-serif;padding:8px"><b>'+site.name+'</b><br/>地址：'+site.address+'<br/>資產：'+site.assets+' 件<br/>告警：'+site.alerts+' 則</div>'});
         });
-      });
-      viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(121.0,24.0,800000),orientation:{heading:0,pitch:Cesium.Math.toRadians(-45),roll:0}});
-    }catch(e){console.error("Cesium init error:",e);}
-    return()=>{if(viewerRef.current){viewerRef.current.destroy();viewerRef.current=null;}};
+        viewer.camera.flyTo({destination:window.Cesium.Cartesian3.fromDegrees(121.0,24.0,800000),orientation:{heading:0,pitch:window.Cesium.Math.toRadians(-45),roll:0}});
+        setLoading(false);
+      }catch(e2){if(!cancelled){setError('Cesium 載入失敗：請確認網路連線或 API Token');setLoading(false);}}
+    })();
+    return function(){cancelled=true;if(viewerRef.current){try{viewerRef.current.destroy();}catch(ex){}viewerRef.current=null;}};
   },[]);
-  return <div ref={ref} style={{width:"100%",height:"100%"}}/>;
+  return(<div style={{width:"100%",height:"100%",position:"relative"}}>
+    <div ref={ref} style={{width:"100%",height:"100%"}}/>
+    {loading&&<div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(10,22,40,0.9)"}}><div className="text-center"><I.Loader size={32} className="text-blue-400 spin mx-auto mb-3"/><div className="text-white text-sm">載入 Cesium 3D 地球...</div></div></div>}
+    {error&&<div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(10,22,40,0.95)"}}><div className="text-center max-w-sm"><I.Alert size={32} className="text-yellow-400 mx-auto mb-3"/><div className="text-white text-sm mb-2">{error}</div><div className="text-gray-400 text-xs">Cesium 需要有效的 Ion Access Token<br/>請至 cesium.com 註冊免費帳號取得</div></div></div>}
+  </div>);
 };
 
-// ============ Mapbox Map ============
+// ============ Mapbox Map (Dynamic Load) ============
 const MapboxMap=({sites})=>{
-  const ref=useRef(null);
-  const mapRef=useRef(null);
+  const ref=useRef(null);const mapRef=useRef(null);const[loading,setLoading]=useState(true);const[error,setError]=useState(null);
   useEffect(()=>{
-    if(!ref.current||mapRef.current)return;
-    try{
-      mapboxgl.accessToken='pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-      const map=new mapboxgl.Map({
-        container:ref.current,style:'mapbox://styles/mapbox/dark-v11',
-        center:[121.0,24.0],zoom:7,pitch:45,bearing:0,
-      });
-      mapRef.current=map;
-      map.addControl(new mapboxgl.NavigationControl(),'top-right');
-      map.on('load',()=>{
-        sites.forEach(site=>{
-          const popup=new mapboxgl.Popup({offset:25}).setHTML(
-            `<div style="font-family:sans-serif"><b>${site.name}</b><br/><span style="color:#666">${site.address}</span><br/>資產：${site.assets} 件 | 告警：${site.alerts} 則</div>`
-          );
-          new mapboxgl.Marker({color:site.alerts>0?'#f59e0b':'#3b82f6'})
-            .setLngLat([site.lng,site.lat]).setPopup(popup).addTo(map);
+    if(!ref.current)return;var cancelled=false;
+    (async()=>{
+      try{
+        loadCSS('https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css');
+        await loadScript('https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js');
+        if(cancelled)return;
+        window.mapboxgl.accessToken='pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+        var map=new window.mapboxgl.Map({container:ref.current,style:'mapbox://styles/mapbox/dark-v11',center:[121.0,24.0],zoom:7,pitch:45,bearing:0});
+        mapRef.current=map;
+        map.addControl(new window.mapboxgl.NavigationControl(),'top-right');
+        map.on('load',function(){
+          sites.forEach(function(site){
+            var popup=new window.mapboxgl.Popup({offset:25}).setHTML('<div style="font-family:sans-serif"><b>'+site.name+'</b><br/><span style="color:#666">'+site.address+'</span><br/>資產：'+site.assets+' 件 | 告警：'+site.alerts+' 則</div>');
+            new window.mapboxgl.Marker({color:site.alerts>0?'#f59e0b':'#3b82f6'}).setLngLat([site.lng,site.lat]).setPopup(popup).addTo(map);
+          });
+          setLoading(false);
         });
-      });
-    }catch(e){console.error("Mapbox init error:",e);}
-    return()=>{if(mapRef.current){mapRef.current.remove();mapRef.current=null;}};
+        map.on('error',function(){if(!cancelled){setError('Mapbox 地圖載入失敗');setLoading(false);}});
+      }catch(e3){if(!cancelled){setError('Mapbox SDK 載入失敗：請確認網路連線');setLoading(false);}}
+    })();
+    return function(){cancelled=true;if(mapRef.current){try{mapRef.current.remove();}catch(ex){}mapRef.current=null;}};
   },[]);
-  return <div ref={ref} style={{width:"100%",height:"100%"}}/>;
+  return(<div style={{width:"100%",height:"100%",position:"relative"}}>
+    <div ref={ref} style={{width:"100%",height:"100%"}}/>
+    {loading&&<div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(10,22,40,0.9)"}}><div className="text-center"><I.Loader size={32} className="text-blue-400 spin mx-auto mb-3"/><div className="text-white text-sm">載入 Mapbox 地圖...</div></div></div>}
+    {error&&<div className="absolute inset-0 flex items-center justify-center" style={{background:"rgba(10,22,40,0.95)"}}><div className="text-center"><I.Alert size={32} className="text-yellow-400 mx-auto mb-3"/><div className="text-white text-sm">{error}</div></div></div>}
+  </div>);
 };
 
 // ============ Layer Tree ============
 const LayerTree=({data,selectedId,onSelect,sq})=>{
   const[exp,setExp]=useState({s1:true,f2:true});
-  const toggle=(id)=>setExp(p=>({...p,[id]:!p[id]}));
-  const match=(n)=>!sq||n.toLowerCase().includes(sq.toLowerCase());
-  const renderA=(a,d=4)=>{
+  const toggle=function(id){setExp(function(p){var n={};for(var k in p)n[k]=p[k];n[id]=!p[id];return n;});};
+  const match=function(n){return !sq||n.toLowerCase().indexOf(sq.toLowerCase())>=0;};
+  const renderA=function(a,depth){
     if(!match(a.name)&&!match(a.type||""))return null;
-    return(<div key={a.id} onClick={()=>onSelect(a)} className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer text-sm transition-all ${selectedId===a.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-gray-200"}`} style={{paddingLeft:d*16}}>
+    return(<div key={a.id} onClick={function(){onSelect(a);}} className={"flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer text-sm transition-all "+(selectedId===a.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-gray-200")} style={{paddingLeft:(depth||4)*16}}>
       <Dot s={a.status}/><span className="truncate flex-1">{a.name}</span><span className="text-xs text-gray-600">{a.type}</span>
     </div>);
   };
-  return(<div className="text-sm">{data.map(site=>(
+  return(<div className="text-sm">{data.map(function(site){return(
     <div key={site.id}>
-      <div onClick={()=>{toggle(site.id);onSelect(site);}} className={`flex items-center gap-2 py-2 px-2 rounded cursor-pointer font-medium transition-all ${selectedId===site.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-200 hover:bg-white hover:bg-opacity-5"}`}>
+      <div onClick={function(){toggle(site.id);onSelect(site);}} className={"flex items-center gap-2 py-2 px-2 rounded cursor-pointer font-medium transition-all "+(selectedId===site.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-200 hover:bg-white hover:bg-opacity-5")}>
         {exp[site.id]?<I.ChevDown size={14}/>:<I.ChevRight size={14}/>}<I.Building size={14} className="text-blue-400"/><span className="truncate flex-1">{site.name}</span>{site.alerts>0&&<Badge variant="danger">{site.alerts}</Badge>}
       </div>
-      {exp[site.id]&&site.floors?.map(fl=>(
+      {exp[site.id]&&site.floors&&site.floors.map(function(fl){return(
         <div key={fl.id}>
-          <div onClick={()=>{toggle(fl.id);onSelect(fl);}} className={`flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer transition-all ${selectedId===fl.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-300 hover:bg-white hover:bg-opacity-5"}`} style={{paddingLeft:24}}>
+          <div onClick={function(){toggle(fl.id);onSelect(fl);}} className={"flex items-center gap-2 py-1.5 px-2 rounded cursor-pointer transition-all "+(selectedId===fl.id?"bg-blue-900 bg-opacity-40 text-blue-300":"text-gray-300 hover:bg-white hover:bg-opacity-5")} style={{paddingLeft:24}}>
             {exp[fl.id]?<I.ChevDown size={12}/>:<I.ChevRight size={12}/>}<I.Layers size={12} className="text-blue-400"/><span className="truncate">{fl.name}</span>
           </div>
-          {exp[fl.id]&&fl.zones?.map(z=>(
+          {exp[fl.id]&&fl.zones&&fl.zones.map(function(z){return(
             <div key={z.id}>
-              <div className="flex items-center gap-2 py-1 px-2 text-gray-500 text-xs" style={{paddingLeft:40}}><I.MapPin size={10} className="text-gray-600"/><span>{z.name}</span></div>
-              {z.assets?.map(a=>(<React.Fragment key={a.id}>{renderA(a)}{a.subItems?.map(sub=>renderA(sub,5))}</React.Fragment>))}
+              <div className="flex items-center gap-2 py-1 px-2 text-gray-500 text-xs" style={{paddingLeft:40}}><I.MapPin size={10}/><span>{z.name}</span></div>
+              {z.assets&&z.assets.map(function(a){return(<React.Fragment key={a.id}>{renderA(a,4)}{a.subItems&&a.subItems.map(function(sub){return renderA(sub,5);})}</React.Fragment>);})}
             </div>
-          ))}
+          );})}
         </div>
-      ))}
+      );})}
     </div>
-  ))}</div>);
+  );})}</div>);
 };
 
 // ============ GIS Search ============
 const GISSearch=({sites,onSelect,onClose})=>{
   const[q,setQ]=useState("");
-  const all=useMemo(()=>{const items=[];sites.forEach(s=>{items.push({...s,_t:"site",_p:s.name});s.floors?.forEach(f=>{items.push({...f,_t:"floor",_p:`${s.name} › ${f.name}`});f.zones?.forEach(z=>{items.push({...z,_t:"zone",_p:`${s.name} › ${f.name} › ${z.name}`});z.assets?.forEach(a=>{items.push({...a,_t:"asset",_p:`${s.name} › ... › ${a.name}`});a.subItems?.forEach(sub=>items.push({...sub,_t:"sub",_p:`... › ${a.name} › ${sub.name}`}));});});});});return items;},[sites]);
-  const results=q.length>0?all.filter(it=>it.name?.toLowerCase().includes(q.toLowerCase())||it.type?.toLowerCase().includes(q.toLowerCase())||(it.model||"").toLowerCase().includes(q.toLowerCase())||(it.address||"").toLowerCase().includes(q.toLowerCase())).slice(0,10):[];
+  const all=useMemo(function(){var items=[];sites.forEach(function(s){items.push({name:s.name,_t:"site",_p:s.name,status:s.status,id:s.id,type:s.type});if(s.floors)s.floors.forEach(function(f){items.push({name:f.name,_t:"floor",_p:s.name+" › "+f.name,id:f.id});if(f.zones)f.zones.forEach(function(z){if(z.assets)z.assets.forEach(function(a){items.push({name:a.name,_t:"asset",_p:s.name+" › "+f.name+" › "+z.name,status:a.status,id:a.id,type:a.type,model:a.model,assetData:a});});});});});return items;},[sites]);
+  var results=q.length>0?all.filter(function(it){var ql=q.toLowerCase();return (it.name&&it.name.toLowerCase().indexOf(ql)>=0)||(it.type&&it.type.toLowerCase().indexOf(ql)>=0)||(it.model&&it.model.toLowerCase().indexOf(ql)>=0);}).slice(0,10):[];
   return(
     <div className="absolute top-4 left-4 right-4 z-20" style={{maxWidth:480}}>
-      <div className="rounded-xl overflow-hidden shadow-2xl" style={{background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",border:"1px solid rgba(71,85,105,0.4)"}}>
+      <div className="rounded-xl overflow-hidden shadow-2xl" style={{background:"rgba(15,23,42,0.95)",border:"1px solid rgba(71,85,105,0.4)"}}>
         <div className="flex items-center gap-3 px-4 py-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-          <I.Search size={16} className="text-gray-400"/>
-          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="搜尋設備、位置、型號..." className="flex-1 bg-transparent text-white text-sm outline-none"/>
+          <I.Search size={16} className="text-gray-400"/><input autoFocus value={q} onChange={function(e){setQ(e.target.value);}} placeholder="搜尋設備、位置、型號..." className="flex-1 bg-transparent text-white text-sm outline-none"/>
           <button onClick={onClose} className="text-gray-400 hover:text-white"><I.X size={16}/></button>
         </div>
-        {results.length>0&&<div style={{maxHeight:280,overflowY:"auto"}}>{results.map((it,i)=>(
-          <button key={i} onClick={()=>{onSelect(it);onClose();}} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white hover:bg-opacity-5 transition-colors text-left">
+        {results.length>0&&<div style={{maxHeight:280,overflowY:"auto"}}>{results.map(function(it,i){return(
+          <button key={i} onClick={function(){onSelect(it);onClose();}} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white hover:bg-opacity-5 transition-colors text-left">
             <I.Server size={15} className="text-blue-400 flex-shrink-0"/><div className="min-w-0 flex-1"><div className="text-sm text-white truncate">{it.name}</div><div className="text-xs text-gray-500 truncate">{it._p}</div></div>{it.status&&<Dot s={it.status}/>}
-          </button>
-        ))}</div>}
+          </button>);})}</div>}
         {q&&results.length===0&&<div className="px-4 py-6 text-center text-gray-500 text-sm">未找到相關結果</div>}
       </div>
     </div>
@@ -543,37 +405,29 @@ const GISSearch=({sites,onSelect,onClose})=>{
 
 // ============ Asset Info Panel ============
 const AssetPanel=({asset,onClose})=>{
-  if(!asset)return null;const d=asset.assetData||asset;
+  if(!asset)return null;var d=asset.assetData||asset;
   return(
-    <div className="slide-in-right flex flex-col overflow-hidden" style={{width:300,background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",borderLeft:"1px solid rgba(71,85,105,0.4)"}}>
-      <div className="p-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-        <h3 className="text-white font-semibold text-sm truncate">{d.name||asset.name}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-white"><I.X size={16}/></button>
-      </div>
+    <div className="slide-in-right flex flex-col overflow-hidden" style={{width:300,background:"rgba(15,23,42,0.95)",borderLeft:"1px solid rgba(71,85,105,0.4)"}}>
+      <div className="p-4 flex items-center justify-between" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}><h3 className="text-white font-semibold text-sm truncate">{d.name||asset.name}</h3><button onClick={onClose} className="text-gray-400 hover:text-white"><I.X size={16}/></button></div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">狀態</div><div className="flex items-center gap-2"><Dot s={d.status||"active"}/><span className="text-sm text-white">{d.status||"Active"}</span></div></div>
           <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">類型</div><span className="text-sm text-white">{d.type||"Equipment"}</span></div>
         </div>
         {d.model&&<div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}><div className="text-xs text-gray-500 mb-1">型號</div><span className="text-sm text-white">{d.model}</span></div>}
-        {(d.temp>0||d.power>0)&&<>
+        {(d.temp>0||d.power>0)&&<React.Fragment>
           <div className="text-xs text-gray-500 uppercase tracking-wider pt-1">即時監控</div>
           <div className="grid grid-cols-2 gap-2">
-            {d.temp>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Thermo size={14} className={d.temp>28?"text-yellow-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">溫度</div><div className={`text-sm font-bold font-mono ${d.temp>28?"text-yellow-400":"text-blue-400"}`}>{d.temp}°C</div></div></div>}
-            {d.power>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Zap size={14} className={d.power>90?"text-red-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">負載</div><div className={`text-sm font-bold font-mono ${d.power>90?"text-red-400":"text-blue-400"}`}>{d.power}%</div></div></div>}
+            {d.temp>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Thermo size={14} className={d.temp>28?"text-yellow-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">溫度</div><div className={"text-sm font-bold font-mono "+(d.temp>28?"text-yellow-400":"text-blue-400")}>{d.temp}°C</div></div></div>}
+            {d.power>0&&<div className="rounded-lg p-3 flex items-center gap-2" style={{background:"rgba(30,41,59,0.6)"}}><I.Zap size={14} className={d.power>90?"text-red-400":"text-blue-400"}/><div><div className="text-xs text-gray-400">負載</div><div className={"text-sm font-bold font-mono "+(d.power>90?"text-red-400":"text-blue-400")}>{d.power}%</div></div></div>}
           </div>
           <div className="rounded-lg p-3" style={{background:"rgba(30,41,59,0.6)"}}>
             <div className="flex justify-between mb-1"><span className="text-xs text-gray-400">功率使用率</span><span className="text-xs text-white font-mono">{d.power}%</span></div>
-            <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(51,65,85,0.8)"}}><div className={`h-full rounded-full ${d.power>90?"bg-red-500":d.power>75?"bg-yellow-500":"bg-blue-500"}`} style={{width:`${d.power}%`}}/></div>
+            <div className="h-2 rounded-full overflow-hidden" style={{background:"rgba(51,65,85,0.8)"}}><div className={"h-full rounded-full "+(d.power>90?"bg-red-500":d.power>75?"bg-yellow-500":"bg-blue-500")} style={{width:d.power+"%"}}/></div>
           </div>
-        </>}
-        {d.subItems&&<div><div className="text-xs text-gray-500 uppercase tracking-wider mb-2">子設備</div>{d.subItems.map(sub=>(
-          <div key={sub.id} className="rounded-lg p-2.5 flex items-center gap-2 mb-1.5" style={{background:"rgba(30,41,59,0.6)"}}><Dot s={sub.status}/><div className="flex-1 min-w-0"><div className="text-xs text-white truncate">{sub.name}</div><div className="text-xs text-gray-500">{sub.type}</div></div></div>
-        ))}</div>}
-        <div className="flex gap-2 pt-2">
-          <button className="flex-1 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">建立工單</button>
-          <button className="flex-1 py-2 text-gray-200 text-xs rounded-lg hover:bg-gray-700" style={{background:"rgba(51,65,85,0.6)"}}>維護記錄</button>
-        </div>
+        </React.Fragment>}
+        {d.subItems&&<div><div className="text-xs text-gray-500 uppercase tracking-wider mb-2">子設備</div>{d.subItems.map(function(sub){return(<div key={sub.id} className="rounded-lg p-2.5 flex items-center gap-2 mb-1.5" style={{background:"rgba(30,41,59,0.6)"}}><Dot s={sub.status}/><div className="flex-1 min-w-0"><div className="text-xs text-white truncate">{sub.name}</div><div className="text-xs text-gray-500">{sub.type}</div></div></div>);})}</div>}
+        <div className="flex gap-2 pt-2"><button className="flex-1 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">建立工單</button><button className="flex-1 py-2 text-gray-200 text-xs rounded-lg hover:bg-gray-700" style={{background:"rgba(51,65,85,0.6)"}}>維護記錄</button></div>
       </div>
     </div>
   );
@@ -581,228 +435,110 @@ const AssetPanel=({asset,onClose})=>{
 
 // ============ GIS Module ============
 const GISModule=()=>{
-  const[sel,setSel]=useState(null);
-  const[showSearch,setShowSearch]=useState(false);
-  const[layerSearch,setLayerSearch]=useState("");
-  const[mapProv,setMapProv]=useState("3d");
-  const[showPanel,setShowPanel]=useState(true);
-  const[showInfo,setShowInfo]=useState(false);
-  const[labels,setLabels]=useState([]);
-
-  const handleClick=(d)=>{setSel(d);setShowInfo(true);};
+  const[sel,setSel]=useState(null);const[showSearch,setShowSearch]=useState(false);const[layerSearch,setLayerSearch]=useState("");
+  const[mapProv,setMapProv]=useState("3d");const[showPanel,setShowPanel]=useState(true);const[showInfo,setShowInfo]=useState(false);const[labels,setLabels]=useState([]);
+  const handleClick=function(d){setSel(d);setShowInfo(true);};
 
   return(
     <div className="flex" style={{height:"100%",background:"#0a1628"}}>
-      {showPanel&&<div className="slide-in-left flex flex-col flex-shrink-0" style={{width:280,background:"rgba(15,23,42,0.95)",backdropFilter:"blur(20px)",borderRight:"1px solid rgba(71,85,105,0.4)"}}>
+      {showPanel&&<div className="slide-in-left flex flex-col flex-shrink-0" style={{width:280,background:"rgba(15,23,42,0.95)",borderRight:"1px solid rgba(71,85,105,0.4)"}}>
         <div className="p-3" style={{borderBottom:"1px solid rgba(71,85,105,0.3)"}}>
-          <div className="flex items-center justify-between mb-3"><h3 className="text-white text-sm font-semibold flex items-center gap-2"><I.Layers size={14} className="text-blue-400"/> 圖層管理</h3><button onClick={()=>setShowPanel(false)} className="text-gray-400 hover:text-white"><I.ChevLeft size={16}/></button></div>
-          <div className="relative"><I.Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500"/><input value={layerSearch} onChange={e=>setLayerSearch(e.target.value)} placeholder="搜尋圖層..." className="w-full rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none" style={{background:"rgba(30,41,59,0.6)",border:"1px solid rgba(71,85,105,0.4)"}}/></div>
+          <div className="flex items-center justify-between mb-3"><h3 className="text-white text-sm font-semibold flex items-center gap-2"><I.Layers size={14} className="text-blue-400"/> 圖層管理</h3><button onClick={function(){setShowPanel(false);}} className="text-gray-400 hover:text-white"><I.ChevLeft size={16}/></button></div>
+          <div className="relative"><I.Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-500"/><input value={layerSearch} onChange={function(e){setLayerSearch(e.target.value);}} placeholder="搜尋圖層..." className="w-full rounded-lg pl-8 pr-3 py-2 text-xs text-white outline-none" style={{background:"rgba(30,41,59,0.6)",border:"1px solid rgba(71,85,105,0.4)"}}/></div>
         </div>
-        <div className="flex-1 overflow-y-auto p-2"><LayerTree data={SITES} selectedId={sel?.id} onSelect={handleClick} sq={layerSearch}/></div>
+        <div className="flex-1 overflow-y-auto p-2"><LayerTree data={SITES} selectedId={sel&&sel.id} onSelect={handleClick} sq={layerSearch}/></div>
         <div className="p-3" style={{borderTop:"1px solid rgba(71,85,105,0.3)"}}><button className="w-full py-2 text-blue-400 text-xs rounded-lg flex items-center justify-center gap-2" style={{background:"rgba(37,99,235,0.1)",border:"1px solid rgba(37,99,235,0.3)"}}><I.Plus size={14}/> 新增管理據點</button></div>
       </div>}
-
       <div className="flex-1 relative overflow-hidden">
-        {/* Controls */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-          {!showPanel&&<button onClick={()=>setShowPanel(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Layers size={16}/></button>}
-          <button onClick={()=>setShowSearch(true)} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Search size={16}/></button>
+          {!showPanel&&<button onClick={function(){setShowPanel(true);}} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Layers size={16}/></button>}
+          <button onClick={function(){setShowSearch(true);}} className="p-2 rounded-lg text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><I.Search size={16}/></button>
           <div className="flex rounded-lg overflow-hidden" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
-            {[{k:"3d",l:"3D View"},{k:"cesium",l:"Cesium"},{k:"mapbox",l:"Mapbox"}].map(p=>(
-              <button key={p.k} onClick={()=>setMapProv(p.k)} className={`px-3 py-2 text-xs transition-colors ${mapProv===p.k?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700"}`}>{p.l}</button>
-            ))}
+            {[{k:"3d",l:"3D View"},{k:"cesium",l:"Cesium"},{k:"mapbox",l:"Mapbox"}].map(function(p){return(
+              <button key={p.k} onClick={function(){setMapProv(p.k);}} className={"px-3 py-2 text-xs transition-colors "+(mapProv===p.k?"bg-blue-600 text-white":"text-gray-300 hover:bg-gray-700")}>{p.l}</button>
+            );})}
           </div>
         </div>
-
-        {/* Interaction hint */}
-        {mapProv==="3d"&&<div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 flex-wrap">
-          <div className="px-3 py-1.5 rounded-lg text-xs" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
-            <span className="text-gray-400">拖曳</span><span className="text-white ml-1">旋轉</span>
-            <span className="text-gray-500 mx-2">|</span>
-            <span className="text-gray-400">右鍵拖曳</span><span className="text-white ml-1">平移</span>
-            <span className="text-gray-500 mx-2">|</span>
-            <span className="text-gray-400">滾輪</span><span className="text-white ml-1">縮放</span>
-            <span className="text-gray-500 mx-2">|</span>
-            <span className="text-gray-400">雙擊</span><span className="text-white ml-1">聚焦</span>
-          </div>
-          <div className="px-3 py-1.5 rounded-lg" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}>
-            <span className="text-xs text-gray-400">MAP: </span><span className="text-xs text-white uppercase font-mono">{mapProv}</span>
-          </div>
-        </div>}
-
-        {/* View controls (3D mode) */}
+        {mapProv==="3d"&&<div className="absolute bottom-4 left-4 z-10"><div className="px-3 py-1.5 rounded-lg text-xs" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><span className="text-gray-400">拖曳</span><span className="text-white ml-1">旋轉</span><span className="text-gray-500 mx-1">|</span><span className="text-gray-400">右鍵</span><span className="text-white ml-1">平移</span><span className="text-gray-500 mx-1">|</span><span className="text-gray-400">滾輪</span><span className="text-white ml-1">縮放</span><span className="text-gray-500 mx-1">|</span><span className="text-gray-400">雙擊</span><span className="text-white ml-1">聚焦</span></div></div>}
         {mapProv==="3d"&&<div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 flex flex-col gap-1">
-          {[I.ZoomIn,I.ZoomOut,I.Locate,I.RotateCcw].map((Ico,i)=>(
-            <button key={i} className="p-2 rounded-lg text-gray-300 hover:text-white transition-colors" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><Ico size={14}/></button>
-          ))}
+          {[I.ZoomIn,I.ZoomOut,I.Locate,I.RotateCcw].map(function(Ico,i){return(<button key={i} className="p-2 rounded-lg text-gray-300 hover:text-white" style={{background:"rgba(30,41,59,0.8)",border:"1px solid rgba(71,85,105,0.4)"}}><Ico size={14}/></button>);})}
         </div>}
-
-        {showSearch&&<GISSearch sites={SITES} onSelect={handleClick} onClose={()=>setShowSearch(false)}/>}
-
-        {/* Map Renderers */}
-        {mapProv==="3d"&&<>
+        {showSearch&&<GISSearch sites={SITES} onSelect={handleClick} onClose={function(){setShowSearch(false);}}/>}
+        {mapProv==="3d"&&<React.Fragment>
           <ThreeScene selectedAsset={sel} onAssetClick={handleClick} siteData={SITES[0]} onLabelPositions={setLabels}/>
-          {/* Floating labels */}
-          {labels.map(lb=>(
-            <div key={lb.id} className="label-3d" onClick={()=>handleClick(lb.data)}
-              style={{left:lb.x,top:lb.y,transform:"translate(-50%,-100%)",
-                background:lb.status==="warning"?"rgba(245,158,11,0.85)":lb.status==="maintenance"?"rgba(99,102,241,0.85)":"rgba(16,185,129,0.75)",
-                color:"#fff",border:"1px solid rgba(255,255,255,0.2)"}}>
-              {lb.name}
-            </div>
-          ))}
-        </>}
+          {labels.map(function(lb){return(<div key={lb.id} className="label-3d" onClick={function(){handleClick(lb.data);}} style={{left:lb.x,top:lb.y,transform:"translate(-50%,-100%)",background:lb.status==="warning"?"rgba(245,158,11,0.85)":lb.status==="maintenance"?"rgba(99,102,241,0.85)":"rgba(16,185,129,0.75)",color:"#fff",border:"1px solid rgba(255,255,255,0.2)"}}>{lb.name}</div>);})}
+        </React.Fragment>}
         {mapProv==="cesium"&&<CesiumMap sites={SITES}/>}
         {mapProv==="mapbox"&&<MapboxMap sites={SITES}/>}
       </div>
-
-      {showInfo&&sel&&<AssetPanel asset={sel} onClose={()=>{setShowInfo(false);setSel(null);}}/>}
+      {showInfo&&sel&&<AssetPanel asset={sel} onClose={function(){setShowInfo(false);setSel(null);}}/>}
     </div>
   );
 };
 
-// ============ Dashboard with Drill-Down ============
+// ============ Dashboard ============
 const DashboardModule=()=>{
-  const[detail,setDetail]=useState(null);// {type:'kpi'|'wo'|'site', data:...}
-
+  const[detail,setDetail]=useState(null);
   const kpiCards=[
-    {title:"管理據點",value:KPI.totalSites,unit:"個",Ic:I.Building,color:"text-blue-500",bg:"bg-blue-50",change:0,detailType:"sites"},
-    {title:"資產總數",value:KPI.totalAssets.toLocaleString(),unit:"件",Ic:I.Database,color:"text-blue-400",bg:"bg-blue-50",change:12,detailType:"assets"},
-    {title:"活躍告警",value:KPI.activeAlerts,unit:"則",Ic:I.Alert,color:"text-yellow-500",bg:"bg-yellow-50",change:-2,detailType:"alerts"},
-    {title:"巡檢完成率",value:KPI.patrolCompletion,unit:"%",Ic:I.Clipboard,color:"text-green-500",bg:"bg-green-50",change:5.2,detailType:"patrol"},
-    {title:"MTBF",value:KPI.mtbf.toLocaleString(),unit:"hr",Ic:I.Activity,color:"text-purple-500",bg:"bg-purple-50",change:120,detailType:"mtbf"},
-    {title:"MTTR",value:KPI.mttr,unit:"hr",Ic:I.Clock,color:"text-red-400",bg:"bg-red-50",change:-0.3,detailType:"mttr"},
-    {title:"OEE",value:KPI.oee,unit:"%",Ic:I.Gauge,color:"text-green-400",bg:"bg-green-50",change:1.5,detailType:"oee"},
-    {title:"待處理工單",value:KPI.workOrdersOpen,unit:"件",Ic:I.Wrench,color:"text-yellow-500",bg:"bg-yellow-50",change:3,detailType:"wo_open"},
+    {title:"管理據點",value:KPI.totalSites,unit:"個",Ico:I.Building,color:"text-blue-500",bg:"bg-blue-50",change:0,dt:"sites"},
+    {title:"資產總數",value:KPI.totalAssets.toLocaleString(),unit:"件",Ico:I.Database,color:"text-blue-400",bg:"bg-blue-50",change:12,dt:"assets"},
+    {title:"活躍告警",value:KPI.activeAlerts,unit:"則",Ico:I.Alert,color:"text-yellow-500",bg:"bg-yellow-50",change:-2,dt:"alerts"},
+    {title:"巡檢完成率",value:KPI.patrolCompletion,unit:"%",Ico:I.Clipboard,color:"text-green-500",bg:"bg-green-50",change:5.2,dt:"patrol"},
+    {title:"MTBF",value:KPI.mtbf.toLocaleString(),unit:"hr",Ico:I.Activity,color:"text-purple-500",bg:"bg-purple-50",change:120,dt:"mtbf"},
+    {title:"MTTR",value:KPI.mttr,unit:"hr",Ico:I.Clock,color:"text-red-400",bg:"bg-red-50",change:-0.3,dt:"mttr"},
+    {title:"OEE",value:KPI.oee,unit:"%",Ico:I.Gauge,color:"text-green-400",bg:"bg-green-50",change:1.5,dt:"oee"},
+    {title:"待處理工單",value:KPI.workOrdersOpen,unit:"件",Ico:I.Wrench,color:"text-yellow-500",bg:"bg-yellow-50",change:3,dt:"wo"},
   ];
-
-  const renderDetail=()=>{
+  var renderDetail=function(){
     if(!detail)return null;
-    if(detail.type==="wo"){
-      const wo=detail.data;
-      return(<DetailModal title={wo.title} onClose={()=>setDetail(null)}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{wo.number}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"primary"}>{wo.priority==="urgent"?"緊急":wo.priority==="high"?"高":wo.priority==="normal"?"一般":"低"}</Badge></div>
-            <div><div className="text-xs text-gray-500 mb-1">指派人員</div><div className="text-sm">{wo.assignee}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">狀態</div><Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge></div>
-            <div><div className="text-xs text-gray-500 mb-1">建立時間</div><div className="text-sm">{wo.created}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{wo.due}</div></div>
-          </div>
-          <div><div className="text-xs text-gray-500 mb-1">關聯資產</div><div className="text-sm font-medium">{wo.asset}</div></div>
-          <div><div className="text-xs text-gray-500 mb-1">問題描述</div><div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{wo.desc}</div></div>
-          <div>
-            <div className="text-xs text-gray-500 mb-2">處理歷程</div>
-            <div className="space-y-2">
-              {wo.history.map((h,i)=>(
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 text-xs text-gray-400 pt-0.5 text-right flex-shrink-0">{h.time}</div>
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/>
-                  <div className="text-sm text-gray-700">{h.action}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </DetailModal>);
-    }
-    if(detail.type==="site"){
-      const site=detail.data;
-      return(<DetailModal title={site.name} onClose={()=>setDetail(null)}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><div className="text-xs text-gray-500 mb-1">類型</div><div className="text-sm">{site.type==="datacenter"?"資料中心":site.type==="factory"?"工廠":"倉儲"}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">狀態</div><div className="flex items-center gap-2"><Dot s={site.alerts>0?"warning":"active"}/><span className="text-sm">{site.alerts>0?"有告警":"正常"}</span></div></div>
-          </div>
-          <div><div className="text-xs text-gray-500 mb-1">地址</div><div className="text-sm">{site.address}</div></div>
-          <div><div className="text-xs text-gray-500 mb-1">座標</div><div className="text-sm font-mono">{site.lat}, {site.lng}</div></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-700">{site.assets}</div><div className="text-xs text-blue-500">資產數</div></div>
-            <div className={`rounded-lg p-3 text-center ${site.alerts>0?"bg-yellow-50":"bg-green-50"}`}><div className={`text-2xl font-bold ${site.alerts>0?"text-yellow-700":"text-green-700"}`}>{site.alerts}</div><div className={`text-xs ${site.alerts>0?"text-yellow-500":"text-green-500"}`}>告警</div></div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-2">樓層結構</div>
-            {site.floors?.map(f=>(
-              <div key={f.id} className="bg-gray-50 rounded-lg p-3 mb-2">
-                <div className="text-sm font-medium text-gray-800 mb-1">{f.name}</div>
-                <div className="text-xs text-gray-500">{f.zones?.length || 0} 區域 · {f.zones?.reduce((acc,z)=>acc+(z.assets?.length||0),0)||0} 設備</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </DetailModal>);
-    }
-    if(detail.type==="kpi"){
-      const kpi=detail.data;
-      return(<DetailModal title={`${kpi.title} - 詳細資訊`} onClose={()=>setDetail(null)}>
-        <div className="space-y-4">
-          <div className="text-center py-6 bg-gray-50 rounded-xl">
-            <div className="text-4xl font-bold text-gray-900">{kpi.value}<span className="text-lg text-gray-400 ml-1">{kpi.unit}</span></div>
-            <div className="text-sm text-gray-500 mt-2">{kpi.title}</div>
-            {kpi.change!==0&&<div className={`mt-2 text-sm ${kpi.change>0?"text-green-600":"text-red-500"}`}>{kpi.change>0?"↑":"↓"} {Math.abs(kpi.change)} 較上期</div>}
-          </div>
-          <div className="text-xs text-gray-500 mb-2">趨勢數據 (近 7 日)</div>
-          <div className="flex items-end gap-1 h-24">
-            {[65,72,68,80,75,85,kpi.detailType==="patrolCompletion"?87.5:90].map((v,i)=>(
-              <div key={i} className="flex-1 bg-blue-100 rounded-t" style={{height:`${v}%`}}>
-                <div className="bg-blue-500 rounded-t h-full" style={{opacity:i===6?1:0.6}}/>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-gray-400"><span>03/12</span><span>03/18</span></div>
-          {kpi.detailType==="sites"&&<div><div className="text-xs text-gray-500 mb-2">各據點概況</div>{SITES.map(s=>(<div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50"><span className="text-sm">{s.name}</span><span className="text-sm text-gray-500">{s.assets} 資產</span></div>))}</div>}
-        </div>
-      </DetailModal>);
-    }
+    if(detail.type==="wo"){var wo=detail.data;return(<DetailModal title={wo.title} onClose={function(){setDetail(null);}}>
+      <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{wo.number}</div></div><div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"primary"}>{wo.priority}</Badge></div><div><div className="text-xs text-gray-500 mb-1">指派</div><div className="text-sm">{wo.assignee}</div></div><div><div className="text-xs text-gray-500 mb-1">狀態</div><Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge></div><div><div className="text-xs text-gray-500 mb-1">建立</div><div className="text-sm">{wo.created}</div></div><div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{wo.due}</div></div></div>
+        <div><div className="text-xs text-gray-500 mb-1">描述</div><div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{wo.desc}</div></div>
+        <div><div className="text-xs text-gray-500 mb-2">處理歷程</div>{wo.history.map(function(h,i){return(<div key={i} className="flex items-start gap-3 mb-1.5"><div className="w-10 text-xs text-gray-400 pt-0.5 text-right flex-shrink-0">{h.time}</div><div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/><div className="text-sm text-gray-700">{h.action}</div></div>);})}</div></div>
+    </DetailModal>);}
+    if(detail.type==="site"){var site=detail.data;return(<DetailModal title={site.name} onClose={function(){setDetail(null);}}>
+      <div className="space-y-4"><div className="grid grid-cols-2 gap-4"><div className="bg-blue-50 rounded-lg p-3 text-center"><div className="text-2xl font-bold text-blue-700">{site.assets}</div><div className="text-xs text-blue-500">資產數</div></div><div className={(site.alerts>0?"bg-yellow-50":"bg-green-50")+" rounded-lg p-3 text-center"}><div className={"text-2xl font-bold "+(site.alerts>0?"text-yellow-700":"text-green-700")}>{site.alerts}</div><div className={"text-xs "+(site.alerts>0?"text-yellow-500":"text-green-500")}>告警</div></div></div>
+        <div><div className="text-xs text-gray-500 mb-1">地址</div><div className="text-sm">{site.address}</div></div>
+        <div><div className="text-xs text-gray-500 mb-1">座標</div><div className="text-sm font-mono">{site.lat}, {site.lng}</div></div>
+        <div><div className="text-xs text-gray-500 mb-2">樓層結構</div>{site.floors&&site.floors.map(function(f){return(<div key={f.id} className="bg-gray-50 rounded-lg p-3 mb-2"><div className="text-sm font-medium text-gray-800 mb-1">{f.name}</div><div className="text-xs text-gray-500">{(f.zones&&f.zones.length)||0} 區域 · {(f.zones&&f.zones.reduce(function(acc,z){return acc+((z.assets&&z.assets.length)||0);},0))||0} 設備</div></div>);})}</div></div>
+    </DetailModal>);}
+    if(detail.type==="kpi"){var kpi=detail.data;return(<DetailModal title={kpi.title+" - 詳細資訊"} onClose={function(){setDetail(null);}}>
+      <div className="space-y-4"><div className="text-center py-6 bg-gray-50 rounded-xl"><div className="text-4xl font-bold text-gray-900">{kpi.value}<span className="text-lg text-gray-400 ml-1">{kpi.unit}</span></div><div className="text-sm text-gray-500 mt-2">{kpi.title}</div>{kpi.change!==0&&<div className={"mt-2 text-sm "+(kpi.change>0?"text-green-600":"text-red-500")}>{kpi.change>0?"↑":"↓"} {Math.abs(kpi.change)} 較上期</div>}</div>
+        <div className="text-xs text-gray-500 mb-2">趨勢數據 (近 7 日)</div>
+        <div className="flex items-end gap-1" style={{height:96}}>{[65,72,68,80,75,85,90].map(function(v,i){return(<div key={i} className="flex-1 rounded-t" style={{height:v+"%",background:i===6?"#3b82f6":"#dbeafe"}}/> );})}</div>
+        <div className="flex justify-between text-xs text-gray-400"><span>03/12</span><span>03/18</span></div>
+        {kpi.dt==="sites"&&<div><div className="text-xs text-gray-500 mb-2">各據點概況</div>{SITES.map(function(s){return(<div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50"><span className="text-sm">{s.name}</span><span className="text-sm text-gray-500">{s.assets} 資產</span></div>);})}</div>}
+      </div>
+    </DetailModal>);}
     return null;
   };
 
   return(
     <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div><h2 className="text-xl font-bold text-gray-900">系統總覽</h2><p className="text-sm text-gray-500 mt-0.5">2026年3月18日 · 即時監控數據</p></div>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><I.Download size={13}/> 匯出</button>
-          <button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><I.Refresh size={13}/> 更新</button>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><h2 className="text-xl font-bold text-gray-900">系統總覽</h2><p className="text-sm text-gray-500 mt-0.5">2026年3月28日 · 即時監控數據</p></div>
+        <div className="flex items-center gap-2"><button className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><I.Download size={13}/> 匯出</button><button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><I.Refresh size={13}/> 更新</button></div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {kpiCards.map((kpi,i)=>(
-          <div key={i} onClick={()=>setDetail({type:"kpi",data:kpi})} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
-            <div className="flex items-center justify-between mb-3"><div className={`p-2 rounded-lg ${kpi.bg}`}><kpi.Ic size={16} className={kpi.color}/></div>
-              {kpi.change!==0&&<span className={`text-xs flex items-center gap-0.5 ${kpi.change>0?"text-green-600":"text-red-500"}`}>{kpi.change>0?<I.ArrowUp size={12}/>:<I.ArrowDown size={12}/>}{Math.abs(kpi.change)}</span>}
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{kpi.value}<span className="text-sm font-normal text-gray-400 ml-1">{kpi.unit}</span></div>
-            <div className="text-xs text-gray-500 mt-1">{kpi.title}</div>
-          </div>
-        ))}
-      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">{kpiCards.map(function(kpi,i){return(
+        <div key={i} onClick={function(){setDetail({type:"kpi",data:kpi});}} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
+          <div className="flex items-center justify-between mb-3"><div className={"p-2 rounded-lg "+kpi.bg}><kpi.Ico size={16} className={kpi.color}/></div>{kpi.change!==0&&<span className={"text-xs flex items-center gap-0.5 "+(kpi.change>0?"text-green-600":"text-red-500")}>{kpi.change>0?<I.ArrowUp size={12}/>:<I.ArrowDown size={12}/>}{Math.abs(kpi.change)}</span>}</div>
+          <div className="text-2xl font-bold text-gray-900">{kpi.value}<span className="text-sm font-normal text-gray-400 ml-1">{kpi.unit}</span></div><div className="text-xs text-gray-500 mt-1">{kpi.title}</div>
+        </div>);})}</div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">最新工單</h3><Badge variant="primary">{WO.filter(w=>w.status!=="completed").length} 進行中</Badge>
-          </div>
-          {WO.slice(0,5).map(wo=>(
-            <div key={wo.id} onClick={()=>setDetail({type:"wo",data:wo})} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
-              <div className={`w-1 h-8 rounded-full flex-shrink-0 ${wo.priority==="urgent"?"bg-red-500":wo.priority==="high"?"bg-yellow-500":wo.priority==="normal"?"bg-blue-500":"bg-gray-300"}`}/>
-              <div className="flex-1 min-w-0"><div className="text-sm text-gray-800 font-medium truncate">{wo.title}</div><div className="text-xs text-gray-500 mt-0.5">{wo.number} · {wo.asset}</div></div>
-              <Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge>
-              <span className="text-xs text-gray-400 hidden sm:block">{wo.assignee}</span>
-              <I.ChevRight size={14} className="text-gray-300"/>
-            </div>
-          ))}
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-900">最新工單</h3><Badge variant="primary">{WO.filter(function(w){return w.status!=="completed";}).length} 進行中</Badge></div>
+          {WO.slice(0,5).map(function(wo){return(
+            <div key={wo.id} onClick={function(){setDetail({type:"wo",data:wo});}} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
+              <div className={"w-1 h-8 rounded-full flex-shrink-0 "+(wo.priority==="urgent"?"bg-red-500":wo.priority==="high"?"bg-yellow-500":wo.priority==="normal"?"bg-blue-500":"bg-gray-300")}/><div className="flex-1 min-w-0"><div className="text-sm text-gray-800 font-medium truncate">{wo.title}</div><div className="text-xs text-gray-500 mt-0.5">{wo.number}</div></div>
+              <Badge variant={wo.status==="completed"?"success":wo.status==="in-progress"?"info":"warning"}>{wo.status==="completed"?"已完成":wo.status==="in-progress"?"處理中":"待處理"}</Badge><I.ChevRight size={14} className="text-gray-300"/>
+            </div>);})}
         </div>
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100"><h3 className="text-sm font-semibold text-gray-900">據點狀態</h3></div>
-          <div className="p-4 space-y-3">
-            {SITES.map(site=>(
-              <div key={site.id} onClick={()=>setDetail({type:"site",data:site})} className="p-3 bg-gray-50 rounded-lg hover-lift cursor-pointer">
-                <div className="flex items-center justify-between mb-1"><span className="text-sm font-medium text-gray-800">{site.name}</span><I.ChevRight size={14} className="text-gray-300"/></div>
-                <div className="flex items-center justify-between text-xs text-gray-500"><span>{site.assets} 資產</span><div className="flex items-center gap-1"><Dot s={site.alerts>0?"warning":"active"}/><span>{site.alerts} 告警</span></div></div>
-              </div>
-            ))}
-          </div>
+          <div className="p-4 space-y-3">{SITES.map(function(site){return(
+            <div key={site.id} onClick={function(){setDetail({type:"site",data:site});}} className="p-3 bg-gray-50 rounded-lg hover-lift cursor-pointer">
+              <div className="flex items-center justify-between mb-1"><span className="text-sm font-medium text-gray-800">{site.name}</span><I.ChevRight size={14} className="text-gray-300"/></div>
+              <div className="flex items-center justify-between text-xs text-gray-500"><span>{site.assets} 資產</span><div className="flex items-center gap-1"><Dot s={site.alerts>0?"warning":"active"}/><span>{site.alerts} 告警</span></div></div>
+            </div>);})}</div>
         </div>
       </div>
       {renderDetail()}
@@ -810,155 +546,66 @@ const DashboardModule=()=>{
   );
 };
 
-// ============ Patrol Module ============
-const PatrolModule=()=>{
-  const[scanning,setScanning]=useState(false);
-  const[scanResult,setScanResult]=useState(null);
-  const[detail,setDetail]=useState(null);
-
-  return(
-    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">巡邏檢查</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><I.Plus size={16}/> 新增排程</button></div>
-      <div className="rounded-xl p-6 text-white" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}>
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <div className="flex-1"><h3 className="text-lg font-semibold mb-1">QR Code 掃描巡檢</h3><p className="text-blue-200 text-sm">掃描檢查點QR碼以開始巡檢作業</p>
-            {scanResult&&<div className="mt-3 rounded-lg p-3" style={{background:"rgba(255,255,255,0.1)"}}><div className="flex items-center gap-2"><I.Check size={16} className="text-green-300"/><span className="text-sm">掃描成功: {scanResult}</span></div></div>}
-          </div>
-          <button onClick={()=>{setScanning(true);setTimeout(()=>{setScanning(false);setScanResult("CP-B1F-003 Rack-C08");},2000);}} disabled={scanning}
-            className={`w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1 flex-shrink-0 ${scanning?"bg-white bg-opacity-30":"bg-white bg-opacity-20 hover:bg-opacity-30 cursor-pointer"}`}>
-            {scanning?<I.Refresh size={28} className="spin"/>:<I.QrCode size={28}/>}<span className="text-xs">{scanning?"掃描中":"掃描"}</span>
-          </button>
-        </div>
-      </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between"><h3 className="text-sm font-semibold text-gray-900">今日巡檢排程</h3></div>
-        {PATROLS.map(p=>(
-          <div key={p.id} onClick={()=>setDetail(p)} className="px-5 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors border-b border-gray-50 cursor-pointer">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${p.status==="completed"?"bg-green-50 text-green-600":p.status==="in-progress"?"bg-blue-50 text-blue-600":"bg-gray-50 text-gray-400"}`}>
-              {p.status==="completed"?<I.Check size={18}/>:p.status==="in-progress"?<I.Play size={18}/>:<I.Clock size={18}/>}
-            </div>
-            <div className="flex-1 min-w-0"><div className="text-sm font-medium text-gray-800">{p.name}</div><div className="text-xs text-gray-500 mt-0.5">{p.route} · {p.patrol}</div></div>
-            <div className="text-right hidden sm:block"><div className="text-xs text-gray-400">{p.time}</div><div className="text-xs font-medium text-gray-600 mt-0.5">{p.completed}/{p.checkpoints}</div></div>
-            <div style={{width:80}}><div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className={`h-full rounded-full ${p.status==="completed"?"bg-green-500":"bg-blue-500"}`} style={{width:`${(p.completed/p.checkpoints)*100}%`}}/></div></div>
-            <I.ChevRight size={14} className="text-gray-300"/>
-          </div>
-        ))}
-      </div>
-      {detail&&<DetailModal title={detail.name} onClose={()=>setDetail(null)}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><div className="text-xs text-gray-500 mb-1">路線</div><div className="text-sm">{detail.route}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">巡檢人員</div><div className="text-sm">{detail.patrol}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">時段</div><div className="text-sm">{detail.time}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">進度</div><div className="text-sm font-bold">{detail.completed}/{detail.checkpoints} 檢查點</div></div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3"><div className="flex justify-between mb-1"><span className="text-xs text-gray-500">完成進度</span><span className="text-xs font-bold">{Math.round((detail.completed/detail.checkpoints)*100)}%</span></div>
-            <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${detail.status==="completed"?"bg-green-500":"bg-blue-500"}`} style={{width:`${(detail.completed/detail.checkpoints)*100}%`}}/></div>
-          </div>
-          {detail.items.length>0&&<div><div className="text-xs text-gray-500 mb-2">檢查項目結果</div>{detail.items.map((it,i)=>(
-            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50">
-              <span className="text-sm text-gray-700">{it.name}</span>
-              <div className="flex items-center gap-2"><span className="text-sm font-mono text-gray-600">{it.val}</span><Badge variant={it.result==="正常"?"success":"warning"}>{it.result}</Badge></div>
-            </div>
-          ))}</div>}
-        </div>
-      </DetailModal>}
+// ============ Patrol ============
+const PatrolModule=()=>{const[scanning,setScanning]=useState(false);const[scanResult,setScanResult]=useState(null);const[detail,setDetail]=useState(null);
+  return(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">巡邏檢查</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><I.Plus size={16}/> 新增排程</button></div>
+    <div className="rounded-xl p-6 text-white" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}><div className="flex flex-col sm:flex-row items-center gap-6"><div className="flex-1"><h3 className="text-lg font-semibold mb-1">QR Code 掃描巡檢</h3><p className="text-blue-200 text-sm">掃描檢查點QR碼以開始巡檢</p>{scanResult&&<div className="mt-3 rounded-lg p-3" style={{background:"rgba(255,255,255,0.1)"}}><div className="flex items-center gap-2"><I.Check size={16} className="text-green-300"/><span className="text-sm">掃描成功: {scanResult}</span></div></div>}</div>
+      <button onClick={function(){setScanning(true);setTimeout(function(){setScanning(false);setScanResult("CP-B1F-003 Rack-C08");},2000);}} disabled={scanning} className={"w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1 flex-shrink-0 "+(scanning?"bg-white bg-opacity-30":"bg-white bg-opacity-20 hover:bg-opacity-30 cursor-pointer")}>{scanning?<I.Refresh size={28} className="spin"/>:<I.QrCode size={28}/>}<span className="text-xs">{scanning?"掃描中":"掃描"}</span></button></div></div>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="px-5 py-4 border-b border-gray-100"><h3 className="text-sm font-semibold text-gray-900">今日巡檢排程</h3></div>
+      {PATROLS.map(function(p){return(<div key={p.id} onClick={function(){setDetail(p);}} className="px-5 py-4 flex items-center gap-4 hover:bg-gray-50 border-b border-gray-50 cursor-pointer"><div className={"w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 "+(p.status==="completed"?"bg-green-50 text-green-600":p.status==="in-progress"?"bg-blue-50 text-blue-600":"bg-gray-50 text-gray-400")}>{p.status==="completed"?<I.Check size={18}/>:p.status==="in-progress"?<I.Play size={18}/>:<I.Clock size={18}/>}</div><div className="flex-1 min-w-0"><div className="text-sm font-medium text-gray-800">{p.name}</div><div className="text-xs text-gray-500 mt-0.5">{p.route} · {p.patrol}</div></div><div style={{width:80}}><div className="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className={"h-full rounded-full "+(p.status==="completed"?"bg-green-500":"bg-blue-500")} style={{width:((p.completed/p.checkpoints)*100)+"%"}}/></div></div><I.ChevRight size={14} className="text-gray-300"/></div>);})}
     </div>
-  );
+    {detail&&<DetailModal title={detail.name} onClose={function(){setDetail(null);}}><div className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><div className="text-xs text-gray-500 mb-1">路線</div><div className="text-sm">{detail.route}</div></div><div><div className="text-xs text-gray-500 mb-1">巡檢人員</div><div className="text-sm">{detail.patrol}</div></div><div><div className="text-xs text-gray-500 mb-1">時段</div><div className="text-sm">{detail.time}</div></div><div><div className="text-xs text-gray-500 mb-1">進度</div><div className="text-sm font-bold">{detail.completed}/{detail.checkpoints}</div></div></div>
+      <div className="bg-gray-50 rounded-lg p-3"><div className="flex justify-between mb-1"><span className="text-xs text-gray-500">完成進度</span><span className="text-xs font-bold">{Math.round((detail.completed/detail.checkpoints)*100)}%</span></div><div className="h-2.5 bg-gray-200 rounded-full overflow-hidden"><div className={"h-full rounded-full "+(detail.status==="completed"?"bg-green-500":"bg-blue-500")} style={{width:((detail.completed/detail.checkpoints)*100)+"%"}}/></div></div>
+      {detail.items.length>0&&<div><div className="text-xs text-gray-500 mb-2">檢查項目</div>{detail.items.map(function(it,i){return(<div key={i} className="flex items-center justify-between py-2 border-b border-gray-50"><span className="text-sm text-gray-700">{it.name}</span><div className="flex items-center gap-2"><span className="text-sm font-mono text-gray-600">{it.val}</span><Badge variant={it.result==="正常"?"success":"warning"}>{it.result}</Badge></div></div>);})}</div>}
+    </div></DetailModal>}
+  </div>);
 };
 
-// ============ Maintenance Module ============
-const MaintenanceModule=()=>{
-  const[detail,setDetail]=useState(null);
-  const groups={pending:WO.filter(w=>w.status==="pending"),"in-progress":WO.filter(w=>w.status==="in-progress"),completed:WO.filter(w=>w.status==="completed")};
-  const prioC={urgent:"border-red-500",high:"border-yellow-500",normal:"border-blue-500",low:"border-gray-300"};
-  return(
-    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-      <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">維護查修</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-2"><I.Plus size={16}/> 新增工單</button></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[{key:"pending",label:"待處理",color:"text-yellow-600",bg:"bg-yellow-50"},{key:"in-progress",label:"處理中",color:"text-blue-600",bg:"bg-blue-50"},{key:"completed",label:"已完成",color:"text-green-600",bg:"bg-green-50"}].map(col=>(
-          <div key={col.key} className="bg-gray-50 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-4"><span className={`text-sm font-semibold ${col.color}`}>{col.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${col.bg} ${col.color}`}>{groups[col.key]?.length||0}</span></div>
-            <div className="space-y-3">{groups[col.key]?.map(wo=>(
-              <div key={wo.id} onClick={()=>setDetail(wo)} className={`bg-white rounded-lg p-4 border-l-4 ${prioC[wo.priority]} shadow-sm hover-lift cursor-pointer`}>
-                <div className="text-sm font-medium text-gray-800 mb-1">{wo.title}</div><div className="text-xs text-gray-500 mb-2">{wo.number}</div>
-                <div className="flex items-center justify-between"><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"default"}>{wo.priority==="urgent"?"緊急":wo.priority==="high"?"高":"一般"}</Badge><span className="text-xs text-gray-400">{wo.assignee}</span></div>
-              </div>
-            ))}{(!groups[col.key]||groups[col.key].length===0)&&<div className="text-center py-6 text-gray-400 text-sm">暫無工單</div>}</div>
-          </div>
-        ))}
-      </div>
-      {detail&&<DetailModal title={detail.title} onClose={()=>setDetail(null)}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{detail.number}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={detail.priority==="urgent"?"danger":detail.priority==="high"?"warning":"primary"}>{detail.priority}</Badge></div>
-            <div><div className="text-xs text-gray-500 mb-1">指派人員</div><div className="text-sm">{detail.assignee}</div></div>
-            <div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{detail.due}</div></div>
-          </div>
-          <div><div className="text-xs text-gray-500 mb-1">問題描述</div><div className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{detail.desc}</div></div>
-          <div><div className="text-xs text-gray-500 mb-2">處理歷程</div>{detail.history.map((h,i)=>(<div key={i} className="flex items-start gap-3 mb-1.5"><div className="w-8 text-xs text-gray-400 pt-0.5 text-right flex-shrink-0">{h.time}</div><div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/><div className="text-sm text-gray-700">{h.action}</div></div>))}</div>
-        </div>
-      </DetailModal>}
-    </div>
-  );
+// ============ Maintenance ============
+const MaintenanceModule=()=>{const[detail,setDetail]=useState(null);var groups={pending:WO.filter(function(w){return w.status==="pending";}),"in-progress":WO.filter(function(w){return w.status==="in-progress";}),completed:WO.filter(function(w){return w.status==="completed";})};var prioC={urgent:"border-red-500",high:"border-yellow-500",normal:"border-blue-500",low:"border-gray-300"};
+  return(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-gray-900">維護查修</h2></div><button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg flex items-center gap-2"><I.Plus size={16}/> 新增工單</button></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{[{key:"pending",label:"待處理",color:"text-yellow-600",bg:"bg-yellow-50"},{key:"in-progress",label:"處理中",color:"text-blue-600",bg:"bg-blue-50"},{key:"completed",label:"已完成",color:"text-green-600",bg:"bg-green-50"}].map(function(col){return(<div key={col.key} className="bg-gray-50 rounded-xl p-4"><div className="flex items-center gap-2 mb-4"><span className={"text-sm font-semibold "+col.color}>{col.label}</span><span className={"text-xs px-2 py-0.5 rounded-full "+col.bg+" "+col.color}>{(groups[col.key]&&groups[col.key].length)||0}</span></div><div className="space-y-3">{groups[col.key]&&groups[col.key].map(function(wo){return(<div key={wo.id} onClick={function(){setDetail(wo);}} className={"bg-white rounded-lg p-4 border-l-4 "+(prioC[wo.priority])+" shadow-sm hover-lift cursor-pointer"}><div className="text-sm font-medium text-gray-800 mb-1">{wo.title}</div><div className="text-xs text-gray-500 mb-2">{wo.number}</div><div className="flex items-center justify-between"><Badge variant={wo.priority==="urgent"?"danger":wo.priority==="high"?"warning":"default"}>{wo.priority}</Badge><span className="text-xs text-gray-400">{wo.assignee}</span></div></div>);})}</div></div>);})}</div>
+    {detail&&<DetailModal title={detail.title} onClose={function(){setDetail(null);}}><div className="space-y-4"><div className="grid grid-cols-2 gap-4"><div><div className="text-xs text-gray-500 mb-1">工單編號</div><div className="text-sm font-mono font-bold">{detail.number}</div></div><div><div className="text-xs text-gray-500 mb-1">優先級</div><Badge variant={detail.priority==="urgent"?"danger":"warning"}>{detail.priority}</Badge></div><div><div className="text-xs text-gray-500 mb-1">指派</div><div className="text-sm">{detail.assignee}</div></div><div><div className="text-xs text-gray-500 mb-1">期限</div><div className="text-sm">{detail.due}</div></div></div>
+      <div><div className="text-xs text-gray-500 mb-1">描述</div><div className="text-sm bg-gray-50 rounded-lg p-3">{detail.desc}</div></div>
+      <div><div className="text-xs text-gray-500 mb-2">歷程</div>{detail.history.map(function(h,i){return(<div key={i} className="flex items-start gap-3 mb-1.5"><div className="w-10 text-xs text-gray-400 text-right flex-shrink-0">{h.time}</div><div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"/><div className="text-sm">{h.action}</div></div>);})}</div></div></DetailModal>}
+  </div>);
 };
 
-// ============ Asset Module ============
-const AssetModule=()=>{
-  const[view,setView]=useState("grid");const[sq,setSq]=useState("");
-  const allA=useMemo(()=>{const items=[];SITES.forEach(s=>s.floors?.forEach(f=>f.zones?.forEach(z=>z.assets?.forEach(a=>items.push({...a,site:s.name,floor:f.name,zone:z.name})))));return items;},[]);
-  const filtered=sq?allA.filter(a=>a.name.toLowerCase().includes(sq.toLowerCase())||a.type.toLowerCase().includes(sq.toLowerCase())||(a.model||"").toLowerCase().includes(sq.toLowerCase())):allA;
-  return(
-    <div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><h2 className="text-xl font-bold text-gray-900">資產管理</h2></div>
-        <div className="flex items-center gap-2"><button className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50 flex items-center gap-1.5"><I.Scan size={14}/> 掃描入庫</button><button className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 flex items-center gap-1.5"><I.Plus size={14}/> 新增資產</button></div>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{label:"資產總數",value:allA.length,Ic:I.Database,color:"text-blue-500"},{label:"正常運行",value:allA.filter(a=>a.status==="active").length,Ic:I.Check,color:"text-green-500"},{label:"維護中",value:allA.filter(a=>a.status==="maintenance").length,Ic:I.Wrench,color:"text-yellow-500"},{label:"異常",value:allA.filter(a=>a.status==="warning").length,Ic:I.Alert,color:"text-red-500"}].map((s,i)=>(<div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"><s.Ic size={20} className={s.color}/><div><div className="text-xl font-bold text-gray-900">{s.value}</div><div className="text-xs text-gray-500">{s.label}</div></div></div>))}</div>
-      <div className="flex items-center gap-3">
-        <div className="flex-1 relative"><I.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"/><input value={sq} onChange={e=>setSq(e.target.value)} placeholder="搜尋資產名稱、類型、型號..." className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"/></div>
-        <div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden"><button onClick={()=>setView("grid")} className={`p-2.5 ${view==="grid"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><I.Grid size={16}/></button><button onClick={()=>setView("list")} className={`p-2.5 ${view==="list"?"bg-blue-50 text-blue-600":"text-gray-400"}`}><I.List size={16}/></button></div>
-      </div>
-      {view==="grid"?<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{filtered.map(a=>(<div key={a.id} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer">
-        <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><div className={`p-2 rounded-lg ${a.status==="active"?"bg-green-50":a.status==="warning"?"bg-yellow-50":"bg-purple-50"}`}><I.Server size={16} className={a.status==="active"?"text-green-500":a.status==="warning"?"text-yellow-500":"text-purple-500"}/></div><div><div className="text-sm font-semibold text-gray-800">{a.name}</div><div className="text-xs text-gray-400">{a.type}</div></div></div><Dot s={a.status}/></div>
-        {a.model&&<div className="text-xs text-gray-500 mb-2">{a.model}</div>}<div className="flex items-center justify-between text-xs text-gray-400"><span>{a.site}</span><span>{a.zone}</span></div>
-        {a.temp>0&&<div className="mt-3 flex items-center gap-4 text-xs"><span className="flex items-center gap-1"><I.Thermo size={12} className="text-blue-500"/>{a.temp}°C</span><span className="flex items-center gap-1"><I.Zap size={12} className="text-blue-500"/>{a.power}%</span></div>}
-      </div>))}</div>:
-      <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto"><table className="w-full"><thead className="bg-gray-50 text-xs text-gray-500"><tr><th className="px-4 py-3 text-left">名稱</th><th className="px-4 py-3 text-left hidden md:table-cell">類型</th><th className="px-4 py-3 text-left hidden lg:table-cell">型號</th><th className="px-4 py-3 text-left hidden sm:table-cell">位置</th><th className="px-4 py-3 text-left">狀態</th></tr></thead><tbody>{filtered.map(a=>(<tr key={a.id} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50"><td className="px-4 py-3 text-sm font-medium text-gray-800">{a.name}</td><td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{a.type}</td><td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{a.model}</td><td className="px-4 py-3 text-xs text-gray-400 hidden sm:table-cell">{a.zone}</td><td className="px-4 py-3"><Badge variant={a.status==="active"?"success":a.status==="warning"?"warning":"info"}>{a.status}</Badge></td></tr>))}</tbody></table></div>}
-    </div>
-  );
+// ============ Asset ============
+const AssetModule=()=>{const[view,setView]=useState("grid");const[sq,setSq]=useState("");
+  var allA=[];SITES.forEach(function(s){if(s.floors)s.floors.forEach(function(f){if(f.zones)f.zones.forEach(function(z){if(z.assets)z.assets.forEach(function(a){allA.push({id:a.id,name:a.name,type:a.type,status:a.status,temp:a.temp,power:a.power,model:a.model,site:s.name,zone:z.name});});});});});
+  var filtered=sq?allA.filter(function(a){var ql=sq.toLowerCase();return a.name.toLowerCase().indexOf(ql)>=0||a.type.toLowerCase().indexOf(ql)>=0||(a.model||"").toLowerCase().indexOf(ql)>=0;}):allA;
+  return(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><h2 className="text-xl font-bold text-gray-900">資產管理</h2></div><div className="flex items-center gap-2"><button className="px-3 py-2 bg-white border border-gray-200 text-gray-600 text-sm rounded-lg flex items-center gap-1.5"><I.Scan size={14}/> 掃描入庫</button><button className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg flex items-center gap-1.5"><I.Plus size={14}/> 新增資產</button></div></div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{l:"資產總數",v:allA.length,Ico:I.Database,c:"text-blue-500"},{l:"正常運行",v:allA.filter(function(a){return a.status==="active";}).length,Ico:I.Check,c:"text-green-500"},{l:"維護中",v:allA.filter(function(a){return a.status==="maintenance";}).length,Ico:I.Wrench,c:"text-yellow-500"},{l:"異常",v:allA.filter(function(a){return a.status==="warning";}).length,Ico:I.Alert,c:"text-red-500"}].map(function(s,i){return(<div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"><s.Ico size={20} className={s.c}/><div><div className="text-xl font-bold text-gray-900">{s.v}</div><div className="text-xs text-gray-500">{s.l}</div></div></div>);})}</div>
+    <div className="flex items-center gap-3"><div className="flex-1 relative"><I.Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"/><input value={sq} onChange={function(e){setSq(e.target.value);}} placeholder="搜尋資產..." className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-400"/></div><div className="flex bg-white border border-gray-200 rounded-lg overflow-hidden"><button onClick={function(){setView("grid");}} className={"p-2.5 "+(view==="grid"?"bg-blue-50 text-blue-600":"text-gray-400")}><I.Grid size={16}/></button><button onClick={function(){setView("list");}} className={"p-2.5 "+(view==="list"?"bg-blue-50 text-blue-600":"text-gray-400")}><I.List size={16}/></button></div></div>
+    {view==="grid"?<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{filtered.map(function(a){return(<div key={a.id} className="bg-white rounded-xl border border-gray-200 p-4 hover-lift cursor-pointer"><div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><div className={"p-2 rounded-lg "+(a.status==="active"?"bg-green-50":"bg-yellow-50")}><I.Server size={16} className={a.status==="active"?"text-green-500":"text-yellow-500"}/></div><div><div className="text-sm font-semibold text-gray-800">{a.name}</div><div className="text-xs text-gray-400">{a.type}</div></div></div><Dot s={a.status}/></div>{a.model&&<div className="text-xs text-gray-500 mb-2">{a.model}</div>}<div className="flex items-center justify-between text-xs text-gray-400"><span>{a.site}</span><span>{a.zone}</span></div>{a.temp>0&&<div className="mt-3 flex items-center gap-4 text-xs"><span className="flex items-center gap-1"><I.Thermo size={12} className="text-blue-500"/>{a.temp}°C</span><span className="flex items-center gap-1"><I.Zap size={12} className="text-blue-500"/>{a.power}%</span></div>}</div>);})}</div>:
+    <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto"><table className="w-full"><thead className="bg-gray-50 text-xs text-gray-500"><tr><th className="px-4 py-3 text-left">名稱</th><th className="px-4 py-3 text-left hidden md:table-cell">類型</th><th className="px-4 py-3 text-left hidden lg:table-cell">型號</th><th className="px-4 py-3 text-left hidden sm:table-cell">位置</th><th className="px-4 py-3 text-left">狀態</th></tr></thead><tbody>{filtered.map(function(a){return(<tr key={a.id} className="hover:bg-gray-50 cursor-pointer border-b border-gray-50"><td className="px-4 py-3 text-sm font-medium text-gray-800">{a.name}</td><td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">{a.type}</td><td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell">{a.model}</td><td className="px-4 py-3 text-xs text-gray-400 hidden sm:table-cell">{a.zone}</td><td className="px-4 py-3"><Badge variant={a.status==="active"?"success":"warning"}>{a.status}</Badge></td></tr>);})}</tbody></table></div>}
+  </div>);
 };
 
-// ============ Reports Module ============
-const ReportsModule=()=>(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div><h2 className="text-xl font-bold text-gray-900">報表分析</h2></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[{title:"資產盤點報告",desc:"最近盤點準確率 98.7%",Ic:I.Clipboard,value:"98.7%",color:"text-green-500"},{title:"維護成本分析",desc:"本月維護支出 NT$1,240,000",Ic:I.TrendUp,value:"NT$1.24M",color:"text-blue-500"},{title:"能源效率報告",desc:"PUE值持續優化中",Ic:I.Zap,value:"1.42",color:"text-yellow-500"},{title:"設備可靠性",desc:"MTBF / MTTR 趨勢分析",Ic:I.Activity,value:"99.1%",color:"text-purple-500"},{title:"巡檢績效",desc:"本月巡檢完成率統計",Ic:I.Target,value:"87.5%",color:"text-blue-400"},{title:"客戶滿意度",desc:"服務評分 4.6 / 5.0",Ic:I.Star,value:"4.6",color:"text-red-400"}].map((r,i)=>(<div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover-lift cursor-pointer"><div className="flex items-center justify-between mb-3"><r.Ic size={20} className={r.color}/><span className={`text-xl font-bold ${r.color}`}>{r.value}</span></div><div className="text-sm font-semibold text-gray-800">{r.title}</div><div className="text-xs text-gray-500 mt-1">{r.desc}</div><button className="mt-3 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1">查看詳情 <I.ArrowUp size={12}/></button></div>))}</div></div>);
+// ============ Reports ============
+const ReportsModule=()=>(<div className="p-4 md:p-6 space-y-6 max-w-screen-xl mx-auto fade-in"><div><h2 className="text-xl font-bold text-gray-900">報表分析</h2></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{[{t:"資產盤點報告",d:"準確率 98.7%",Ico:I.Clipboard,v:"98.7%",c:"text-green-500"},{t:"維護成本分析",d:"本月 NT$1,240,000",Ico:I.TrendUp,v:"NT$1.24M",c:"text-blue-500"},{t:"能源效率",d:"PUE 持續優化",Ico:I.Zap,v:"1.42",c:"text-yellow-500"},{t:"設備可靠性",d:"MTBF/MTTR 趨勢",Ico:I.Activity,v:"99.1%",c:"text-purple-500"},{t:"巡檢績效",d:"本月完成率",Ico:I.Target,v:"87.5%",c:"text-blue-400"},{t:"客戶滿意度",d:"服務評分",Ico:I.Star,v:"4.6",c:"text-red-400"}].map(function(r,i){return(<div key={i} className="bg-white rounded-xl border border-gray-200 p-5 hover-lift cursor-pointer"><div className="flex items-center justify-between mb-3"><r.Ico size={20} className={r.c}/><span className={"text-xl font-bold "+r.c}>{r.v}</span></div><div className="text-sm font-semibold text-gray-800">{r.t}</div><div className="text-xs text-gray-500 mt-1">{r.d}</div></div>);})}</div></div>);
 
 // ============ Main App ============
-const MODS=[{id:"dashboard",label:"系統總覽",Ic:I.Home},{id:"gis",label:"3D GIS",Ic:I.Globe},{id:"assets",label:"資產管理",Ic:I.Database},{id:"patrol",label:"巡邏檢查",Ic:I.Clipboard},{id:"maintenance",label:"維護查修",Ic:I.Wrench},{id:"reports",label:"報表分析",Ic:I.BarChart}];
+const MODS=[{id:"dashboard",label:"系統總覽",Ico:I.Home},{id:"gis",label:"3D GIS",Ico:I.Globe},{id:"assets",label:"資產管理",Ico:I.Database},{id:"patrol",label:"巡邏檢查",Ico:I.Clipboard},{id:"maintenance",label:"維護查修",Ico:I.Wrench},{id:"reports",label:"報表分析",Ico:I.BarChart}];
 
 const App=()=>{
-  const[mod,setMod]=useState("dashboard");
-  const[mobileMenu,setMobileMenu]=useState(false);
-  const isGIS=mod==="gis";
-
-  const renderMod=()=>{switch(mod){case"dashboard":return<DashboardModule/>;case"gis":return<GISModule/>;case"assets":return<AssetModule/>;case"patrol":return<PatrolModule/>;case"maintenance":return<MaintenanceModule/>;case"reports":return<ReportsModule/>;default:return<DashboardModule/>;}};
-
+  const[mod,setMod]=useState("dashboard");const[mm,setMM]=useState(false);var isGIS=mod==="gis";
+  var renderMod=function(){switch(mod){case"dashboard":return React.createElement(DashboardModule);case"gis":return React.createElement(GISModule);case"assets":return React.createElement(AssetModule);case"patrol":return React.createElement(PatrolModule);case"maintenance":return React.createElement(MaintenanceModule);case"reports":return React.createElement(ReportsModule);default:return React.createElement(DashboardModule);}};
   return(
     <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
       <header className="bg-white border-b border-gray-200 px-4 flex items-center justify-between flex-shrink-0 z-30" style={{height:56}}>
-        <div className="flex items-center gap-3">
-          <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg" onClick={()=>setMobileMenu(true)}><I.Menu size={20}/></button>
-          <div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}><I.Building size={16} className="text-white"/></div><div className="hidden sm:block"><span className="text-sm font-bold text-gray-900">PFMS</span><span className="text-xs text-gray-400 ml-1.5 hidden md:inline">物業與設施管理系統</span></div></div>
-        </div>
-        <nav className="hidden md:flex items-center gap-1">{MODS.map(m=>(<button key={m.id} onClick={()=>setMod(m.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}><m.Ic size={15}/><span>{m.label}</span></button>))}</nav>
-        <div className="flex items-center gap-2"><button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><I.Bell size={18}/><span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold flex items-center justify-center rounded-full" style={{fontSize:9}}>4</span></button><div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">SJ</div></div>
+        <div className="flex items-center gap-3"><button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg" onClick={function(){setMM(true);}}><I.Menu size={20}/></button><div className="flex items-center gap-2.5"><div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:"linear-gradient(135deg,#2563eb,#4338ca)"}}><I.Building size={16} className="text-white"/></div><div className="hidden sm:block"><span className="text-sm font-bold text-gray-900">PFMS</span><span className="text-xs text-gray-400 ml-1.5 hidden md:inline">物業與設施管理系統</span></div></div></div>
+        <nav className="hidden md:flex items-center gap-1">{MODS.map(function(m){return(<button key={m.id} onClick={function(){setMod(m.id);}} className={"flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors "+(mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-500 hover:text-gray-700 hover:bg-gray-50")}><m.Ico size={15}/><span>{m.label}</span></button>);})}</nav>
+        <div className="flex items-center gap-2"><button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><I.Bell size={18}/><span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white flex items-center justify-center rounded-full" style={{fontSize:9}}>4</span></button><div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">SJ</div></div>
       </header>
-      {mobileMenu&&<div className="fixed inset-0 z-50"><div className="absolute inset-0 bg-black bg-opacity-40" onClick={()=>setMobileMenu(false)}/><div className="relative bg-white shadow-xl slide-in-left" style={{width:280,height:"100%"}}><div className="p-4 border-b border-gray-100 flex items-center justify-between"><span className="text-sm font-bold text-gray-900">PFMS</span><button onClick={()=>setMobileMenu(false)} className="text-gray-400"><I.X size={20}/></button></div><nav className="p-3 space-y-1">{MODS.map(m=>(<button key={m.id} onClick={()=>{setMod(m.id);setMobileMenu(false);}} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-600 hover:bg-gray-50"}`}><m.Ic size={18}/><span>{m.label}</span></button>))}</nav></div></div>}
+      {mm&&<div className="fixed inset-0 z-50"><div className="absolute inset-0 bg-black bg-opacity-40" onClick={function(){setMM(false);}}/><div className="relative bg-white shadow-xl slide-in-left" style={{width:280,height:"100%"}}><div className="p-4 border-b border-gray-100 flex items-center justify-between"><span className="text-sm font-bold text-gray-900">PFMS</span><button onClick={function(){setMM(false);}} className="text-gray-400"><I.X size={20}/></button></div><nav className="p-3 space-y-1">{MODS.map(function(m){return(<button key={m.id} onClick={function(){setMod(m.id);setMM(false);}} className={"w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left "+(mod===m.id?"bg-blue-50 text-blue-700 font-medium":"text-gray-600 hover:bg-gray-50")}><m.Ico size={18}/><span>{m.label}</span></button>);})}</nav></div></div>}
       <main className="flex-1 overflow-auto" style={{background:isGIS?"#0a1628":undefined}}>{renderMod()}</main>
     </div>
   );
 };
 
-ReactDOM.render(<App/>,document.getElementById("root"));
+ReactDOM.render(React.createElement(App),document.getElementById("root"));
 </script>
 </body>
 </html>
